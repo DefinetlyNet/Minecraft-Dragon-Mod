@@ -1,0 +1,86 @@
+{
+  "parent": "forge:item/default-tool",
+  "loader": "forge:item_layers",
+  "textures": {
+    "layer0": "wildcreatures:item/dragon_sword",
+    "layer1": "wildcreatures:item/dragon_sword_core"
+  },
+  "forge_data": {
+    "layers": {
+      "1": {
+        "block_light": 15,
+        "sky_light": 15
+      }
+    }
+  },
+  "display": {
+    "thirdperson_righthand": {
+      "rotation": [
+        0.0,
+        -90.0,
+        55.0
+      ],
+      "translation": [
+        0.0,
+        7.07,
+        -0.04
+      ],
+      "scale": [
+        1.36,
+        1.36,
+        1.36
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        0.0,
+        90.0,
+        -55.0
+      ],
+      "translation": [
+        0.0,
+        7.07,
+        -0.04
+      ],
+      "scale": [
+        1.36,
+        1.36,
+        1.36
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0.0,
+        -90.0,
+        35.0
+      ],
+      "translation": [
+        0.13,
+        6.47,
+        0.52
+      ],
+      "scale": [
+        0.76,
+        0.76,
+        0.76
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0.0,
+        90.0,
+        -35.0
+      ],
+      "translation": [
+        0.13,
+        6.47,
+        0.52
+      ],
+      "scale": [
+        0.76,
+        0.76,
+        0.76
+      ]
+    }
+  }
+}

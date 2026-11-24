@@ -1,7 +1,7 @@
-# Wild Creatures 1.4.0 (Forge 1.20.1)
+# Wild Creatures 1.7.0 (Forge 1.20.1)
 
 A creature mod that can keep growing. The first creature is the **Red Dragon**.
-Install: put `wildcreatures-1.4.0.jar` in your `mods` folder (Forge 47 for Minecraft 1.20.1). No other mods needed.
+Install: put `wildcreatures-1.7.0.jar` in your `mods` folder (Forge 47 for Minecraft 1.20.1), plus TerraBlender (see the Ashen Wastes section).
 
 ## Red Dragon
 - Big and hostile: about 11 blocks from nose to tail and about 4 to 5 blocks tall, covered in overlapping scales.
@@ -55,3 +55,28 @@ How common the biome is: `ashenWastesWeight` in `config/wildcreatures-common.tom
 - **Burnt oak saplings:** plant them on ashen soil, dirt or grass. They grow into the big dead burnt oak trees (bone meal works).
 - **Dragon nests:** a ring of burnt wood about 15 blocks across with bones and a chest in the middle. They appear now and then in every biome the Red Dragon lives in (right now the Ashen Wastes; add more biomes in `data/wildcreatures/tags/worldgen/biome/red_dragon_habitat.json`). The chest can hold burnt oak logs, dragon scales, burnt sticks and saplings, bones, iron and gold, and iron tools and armor (sometimes enchanted). There's also a small chance of diamonds or a golden apple. Find one with `/locate structure wildcreatures:dragon_nest`.
 - **Dragon sizes:** each dragon rolls a size when it spawns. Small (70% size, 120 health, weaker hits) 30% of the time. Normal (200 health) most of the time. Giant (150% size, 400 health, harder hits, longer and wider fire breath, drops extra scales) 3% of the time. Change these in the config (`smallChancePercent`, `smallHealth`, `giantChancePercent`, `giantHealth`). To summon a specific size: `/summon wildcreatures:red_dragon ~ ~ ~ {DragonSize:"giant"}` (or "small", "normal").
+
+## Dragon tools, Dragon Shield and Dragon Essence (v1.7.0)
+
+All crafted from **Red Dragon Scales** and **burnt sticks**, using the same shapes as vanilla tools. None of them burn in lava. Repair them with scales on an anvil.
+
+| Item | Recipe | Damage | Speed | Durability | Notes |
+|---|---|---|---|---|---|
+| Dragon Sword | 2 scales on 1 burnt stick | 9 | 1.4 | 1800 | Big glowing lava-core blade, held bigger than a normal sword. Sets whatever it hits on fire for 4 seconds. |
+| Dragon Pickaxe | 3 scales, 2 burnt sticks | 6 | 1.2 | 1800 | Mines a bit faster than diamond. |
+| Dragon Axe | 3 scales, 2 burnt sticks | 10 | 1.0 | 1800 | |
+| Dragon Shovel | 1 scale, 2 burnt sticks | 6.5 | 1.0 | 1800 | |
+| Dragon Shield | 6 scales + 1 Dragon Essence (shield shape, essence where the iron goes) | | | 1200 | Any mob that hits you while you're blocking catches fire for 5 seconds. |
+
+For comparison, a diamond sword does 7 and lasts 1561 uses; a netherite sword does 8 and lasts 2031. A normal shield lasts 336.
+
+The tools look like the vanilla diamond tools recoloured dragon red, with small spikes, ember highlights and charcoal-grey burnt-stick handles. The shield has a scaled red face with a bronze rim, a glowing dragon eye in the middle, two bone horns on top and a burnt-plank back. The eye and the cracks glow in the dark.
+
+**Dragon Essence** (needed for the shield):
+- Red Dragons drop it very rarely when a player kills them: 2% for a normal dragon, 1% for a small one, 10% for a giant. Looting raises it by half per level (Looting III makes it 5% / 2.5% / 25%).
+- It's in about 1 in 60 dragon nest chests.
+- It glows and shimmers like an enchanted item.
+
+Change the numbers in `config/wildcreatures-common.toml`: `dropChancePercent`, `smallDropChancePercent` and `giantDropChancePercent` under `[dragon_essence]`, and `swordBurnSeconds` and `shieldBurnSeconds` under `[dragon_gear]` (0 turns the fire off). The nest chance is in `data/wildcreatures/loot_tables/chests/dragon_nest.json` (the last pool: weight 1 essence against weight 59 empty).
+
+The textures are made by `tools/make_dragon_gear.py`; the shield's 3D shape is in `client/DragonShieldRenderer.java`.

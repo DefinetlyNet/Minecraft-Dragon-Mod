@@ -13,7 +13,9 @@ public final class CreatureConfig {
     public static final ForgeConfigSpec.IntValue DRAGON_BITE_COOLDOWN, DRAGON_BREATH_TICKS, DRAGON_BREATH_COOLDOWN,
             DRAGON_BURN_SECONDS, DRAGON_SPAWN_CHANCE, ASHEN_WASTES_WEIGHT,
             DRAGON_SMALL_CHANCE, DRAGON_GIANT_CHANCE;
-    public static final ForgeConfigSpec.DoubleValue DRAGON_SMALL_HEALTH, DRAGON_GIANT_HEALTH;
+    public static final ForgeConfigSpec.DoubleValue DRAGON_SMALL_HEALTH, DRAGON_GIANT_HEALTH,
+            ESSENCE_CHANCE, ESSENCE_CHANCE_SMALL, ESSENCE_CHANCE_GIANT;
+    public static final ForgeConfigSpec.IntValue SWORD_BURN_SECONDS, SHIELD_BURN_SECONDS;
     public static final ForgeConfigSpec.BooleanValue DRAGON_CAN_FLY, DRAGON_BURNS_BLOCKS;
 
     static {
@@ -39,6 +41,15 @@ public final class CreatureConfig {
         DRAGON_FLY_SPEED = b.comment("Top flying speed in blocks per tick (a sprinting player is about 0.28)").defineInRange("flySpeed", 0.45, 0.05, 2.0);
         DRAGON_SPAWN_CHANCE = b.comment("Natural spawns (in the Ashen Wastes) only succeed 1 time in this many tries. Higher = rarer. 0 = never spawn naturally.")
                 .defineInRange("spawnRarity", 4, 0, 10000);
+        b.pop();
+        b.comment("Dragon Essence drops (percent chance when a player kills a dragon; each level of Looting adds half of the normal chance)").push("dragon_essence");
+        ESSENCE_CHANCE = b.comment("Normal-size dragon").defineInRange("dropChancePercent", 2.0, 0.0, 100.0);
+        ESSENCE_CHANCE_SMALL = b.comment("Small dragon").defineInRange("smallDropChancePercent", 1.0, 0.0, 100.0);
+        ESSENCE_CHANCE_GIANT = b.comment("Giant dragon").defineInRange("giantDropChancePercent", 10.0, 0.0, 100.0);
+        b.pop();
+        b.comment("Dragon gear").push("dragon_gear");
+        SWORD_BURN_SECONDS = b.comment("Seconds a creature burns after being hit by the Dragon Sword (0 = no fire)").defineInRange("swordBurnSeconds", 4, 0, 60);
+        SHIELD_BURN_SECONDS = b.comment("Seconds a creature burns after hitting a player who is blocking with the Dragon Shield (0 = no fire)").defineInRange("shieldBurnSeconds", 5, 0, 60);
         b.pop();
         b.comment("World generation. Changes only affect newly generated land.").push("world");
         ASHEN_WASTES_WEIGHT = b.comment("How common the Ashen Wastes biome is. Higher = more common, 0 = turned off. Needs a game restart.")

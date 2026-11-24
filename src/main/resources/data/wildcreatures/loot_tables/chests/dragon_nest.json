@@ -399,6 +399,20 @@
           "weight": 1
         }
       ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:empty",
+          "weight": 59
+        },
+        {
+          "type": "minecraft:item",
+          "name": "wildcreatures:dragon_essence",
+          "weight": 1
+        }
+      ]
     }
   ]
 }

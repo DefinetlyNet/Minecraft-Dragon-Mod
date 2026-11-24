@@ -1,0 +1,16 @@
+{
+  "parent": "forge:item/default",
+  "loader": "forge:item_layers",
+  "textures": {
+    "layer0": "wildcreatures:item/dragon_essence",
+    "layer1": "wildcreatures:item/dragon_essence_glow"
+  },
+  "forge_data": {
+    "layers": {
+      "1": {
+        "block_light": 15,
+        "sky_light": 15
+      }
+    }
+  }
+}

@@ -1,6 +1,13 @@
 package com.wildcreatures;
 
+import com.wildcreatures.item.DragonEssenceItem;
 import com.wildcreatures.item.DragonScaleArmorItem;
+import com.wildcreatures.item.DragonShieldItem;
+import com.wildcreatures.item.DragonSwordItem;
+import com.wildcreatures.item.DragonTier;
+import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.PickaxeItem;
+import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.DoubleHighBlockItem;
 import net.minecraft.world.item.HangingSignItem;
@@ -30,6 +37,19 @@ public final class ModItems {
             () -> new SignItem(new Item.Properties().stacksTo(16), ModBlocks.BURNT_OAK_SIGN.get(), ModBlocks.BURNT_OAK_WALL_SIGN.get()));
     public static final RegistryObject<Item> BURNT_OAK_HANGING_SIGN = ITEMS.register("burnt_oak_hanging_sign",
             () -> new HangingSignItem(ModBlocks.BURNT_OAK_HANGING_SIGN.get(), ModBlocks.BURNT_OAK_WALL_HANGING_SIGN.get(), new Item.Properties().stacksTo(16)));
+
+    public static final RegistryObject<Item> DRAGON_ESSENCE = ITEMS.register("dragon_essence",
+            () -> new DragonEssenceItem(new Item.Properties().rarity(Rarity.EPIC).fireResistant().stacksTo(16)));
+    public static final RegistryObject<Item> DRAGON_SWORD = ITEMS.register("dragon_sword",
+            () -> new DragonSwordItem(new Item.Properties().rarity(Rarity.EPIC).fireResistant()));
+    public static final RegistryObject<Item> DRAGON_PICKAXE = ITEMS.register("dragon_pickaxe",
+            () -> new PickaxeItem(DragonTier.DRAGON, 1, -2.8F, new Item.Properties().rarity(Rarity.RARE).fireResistant()));
+    public static final RegistryObject<Item> DRAGON_AXE = ITEMS.register("dragon_axe",
+            () -> new AxeItem(DragonTier.DRAGON, 5.0F, -3.0F, new Item.Properties().rarity(Rarity.RARE).fireResistant()));
+    public static final RegistryObject<Item> DRAGON_SHOVEL = ITEMS.register("dragon_shovel",
+            () -> new ShovelItem(DragonTier.DRAGON, 1.5F, -3.0F, new Item.Properties().rarity(Rarity.RARE).fireResistant()));
+    public static final RegistryObject<Item> DRAGON_SHIELD = ITEMS.register("dragon_shield",
+            () -> new DragonShieldItem(new Item.Properties().durability(1200).rarity(Rarity.EPIC).fireResistant()));
 
     public static final RegistryObject<Item> DRAGON_SCALE_HELMET = armor("dragon_scale_helmet", ArmorItem.Type.HELMET);
     public static final RegistryObject<Item> DRAGON_SCALE_CHESTPLATE = armor("dragon_scale_chestplate", ArmorItem.Type.CHESTPLATE);

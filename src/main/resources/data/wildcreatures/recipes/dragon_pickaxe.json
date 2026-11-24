@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "SSS",
+    " B ",
+    " B "
+  ],
+  "key": {
+    "S": {
+      "item": "wildcreatures:red_dragon_scale"
+    },
+    "B": {
+      "item": "wildcreatures:burnt_stick"
+    }
+  },
+  "result": {
+    "item": "wildcreatures:dragon_pickaxe"
+  }
+}

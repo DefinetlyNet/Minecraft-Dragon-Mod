@@ -38,5 +38,14 @@
   "block.wildcreatures.burnt_oak_wall_hanging_sign": "Burnt Oak Hanging Sign",
   "block.wildcreatures.burnt_oak_sapling": "Burnt Oak Sapling",
   "block.wildcreatures.burnt_bush": "Burnt Bush",
-  "item.wildcreatures.burnt_stick": "Burnt Stick"
+  "item.wildcreatures.burnt_stick": "Burnt Stick",
+  "item.wildcreatures.dragon_essence": "Dragon Essence",
+  "item.wildcreatures.dragon_essence.desc": "The still-burning heart of a dragon",
+  "item.wildcreatures.dragon_sword": "Dragon Sword",
+  "item.wildcreatures.dragon_sword.desc": "Sets whatever it hits on fire",
+  "item.wildcreatures.dragon_pickaxe": "Dragon Pickaxe",
+  "item.wildcreatures.dragon_axe": "Dragon Axe",
+  "item.wildcreatures.dragon_shovel": "Dragon Shovel",
+  "item.wildcreatures.dragon_shield": "Dragon Shield",
+  "item.wildcreatures.dragon_shield.desc": "Mobs that hit it while you block catch fire"
 }

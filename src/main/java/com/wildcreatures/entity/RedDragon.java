@@ -198,6 +198,14 @@ public class RedDragon extends Monster {
     protected void dropCustomDeathLoot(DamageSource source, int looting, boolean hitByPlayer) {
         super.dropCustomDeathLoot(source, looting, hitByPlayer);
         if (size == Size.GIANT) spawnAtLocation(new net.minecraft.world.item.ItemStack(ModItems.RED_DRAGON_SCALE.get(), 4 + random.nextInt(4 + looting)));
+        if (hitByPlayer) {
+            double chance = switch (size) {
+                case SMALL -> CreatureConfig.ESSENCE_CHANCE_SMALL.get();
+                case GIANT -> CreatureConfig.ESSENCE_CHANCE_GIANT.get();
+                default -> CreatureConfig.ESSENCE_CHANCE.get();
+            } * (1 + 0.5 * looting);
+            if (random.nextDouble() * 100 < chance) spawnAtLocation(new net.minecraft.world.item.ItemStack(ModItems.DRAGON_ESSENCE.get()));
+        }
     }
 
     // ------------------------------------------------------------------ state

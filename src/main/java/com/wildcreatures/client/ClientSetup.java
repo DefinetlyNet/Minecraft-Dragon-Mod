@@ -3,6 +3,9 @@ package com.wildcreatures.client;
 import com.wildcreatures.ModBlockEntities;
 import com.wildcreatures.ModBlocks;
 import com.wildcreatures.ModEntities;
+import com.wildcreatures.ModItems;
+import net.minecraft.client.renderer.item.ItemProperties;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.blockentity.HangingSignRenderer;
 import net.minecraft.client.renderer.blockentity.SignRenderer;
@@ -21,6 +24,7 @@ public final class ClientSetup {
     public static void layers(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(RedDragonRenderer.LAYER, RedDragonLayer::create);
         event.registerLayerDefinition(DragonArmorModels.HELMET, DragonArmorLayers::createHelmet);
+        event.registerLayerDefinition(DragonShieldRenderer.LAYER, DragonShieldRenderer::createLayer);
     }
 
     @SubscribeEvent
@@ -32,6 +36,11 @@ public final class ClientSetup {
 
     @SubscribeEvent
     public static void clientSetup(FMLClientSetupEvent event) {
-        event.enqueueWork(() -> Sheets.addWoodType(ModBlocks.BURNT_OAK_TYPE));
+        event.enqueueWork(() -> {
+            Sheets.addWoodType(ModBlocks.BURNT_OAK_TYPE);
+            // the shield model switches to its raised pose while blocking, like the vanilla shield
+            ItemProperties.register(ModItems.DRAGON_SHIELD.get(), new ResourceLocation("blocking"),
+                    (stack, level, entity, seed) -> entity != null && entity.isUsingItem() && entity.getUseItem() == stack ? 1.0F : 0.0F);
+        });
     }
 }

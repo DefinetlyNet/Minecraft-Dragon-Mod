@@ -38,6 +38,12 @@ public class WildCreatures {
             .displayItems((params, out) -> {
                 out.accept(ModItems.RED_DRAGON_SPAWN_EGG.get());
                 out.accept(ModItems.RED_DRAGON_SCALE.get());
+                out.accept(ModItems.DRAGON_ESSENCE.get());
+                out.accept(ModItems.DRAGON_SWORD.get());
+                out.accept(ModItems.DRAGON_PICKAXE.get());
+                out.accept(ModItems.DRAGON_AXE.get());
+                out.accept(ModItems.DRAGON_SHOVEL.get());
+                out.accept(ModItems.DRAGON_SHIELD.get());
                 out.accept(ModItems.DRAGON_SCALE_HELMET.get());
                 out.accept(ModItems.DRAGON_SCALE_CHESTPLATE.get());
                 out.accept(ModItems.DRAGON_SCALE_LEGGINGS.get());
@@ -101,8 +107,19 @@ public class WildCreatures {
             event.accept(ModBlocks.BURNT_OAK_SAPLING);
             event.accept(ModBlocks.BURNT_BUSH);
         }
-        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) event.accept(ModItems.BURNT_STICK);
+        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
+            event.accept(ModItems.BURNT_STICK);
+            event.accept(ModItems.DRAGON_ESSENCE);
+        }
+        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+            event.accept(ModItems.DRAGON_PICKAXE);
+            event.accept(ModItems.DRAGON_AXE);
+            event.accept(ModItems.DRAGON_SHOVEL);
+        }
         if (event.getTabKey() == CreativeModeTabs.COMBAT) {
+            event.accept(ModItems.DRAGON_SWORD);
+            event.accept(ModItems.DRAGON_AXE);
+            event.accept(ModItems.DRAGON_SHIELD);
             event.accept(ModItems.DRAGON_SCALE_HELMET);
             event.accept(ModItems.DRAGON_SCALE_CHESTPLATE);
             event.accept(ModItems.DRAGON_SCALE_LEGGINGS);
