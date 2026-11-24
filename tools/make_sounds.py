@@ -1,5 +1,5 @@
-"""Synthesises the Red Dragon's sounds (roars, growl, hurt, death, bite, fire breath,
-wing flap, footstep) and writes them as mono .ogg files.
+"""Synthesises the dragons' sounds (roars, growl, hurt, death, bite, fire breath,
+wing flap, footstep, and the Frost Dragon's icy breath) and writes them as mono .ogg files.
 
 Run from the project root:  python3 tools/make_sounds.py   (needs numpy and ffmpeg)
 Every sound is built from scratch: a buzzing vocal source shaped by throat-like
@@ -7,6 +7,7 @@ resonances, a growl tremor, breath noise and some distortion.
 """
 import os
 import subprocess
+import sys
 import tempfile
 import wave
 
@@ -154,7 +155,8 @@ def step():
     return boom + dirt + scrape
 
 
-def save(name, x, peak=0.92):
+def save(name, x, peak=0.92, out=None):
+    out = out or OUT
     x = x - np.mean(x)
     x = x / (np.max(np.abs(x)) + 1e-9) * peak
     fade = min(len(x) // 10, int(0.01 * SR))
@@ -167,10 +169,45 @@ def save(name, x, peak=0.92):
             w.setframerate(SR)
             w.writeframes(pcm.tobytes())
         subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", tmp.name, "-c:a", "libvorbis", "-q:a", "5",
-                        f"{OUT}/{name}.ogg"], check=True)
+                        f"{out}/{name}.ogg"], check=True)
         os.unlink(tmp.name)
     print("wrote", name, f"{len(x) / SR:.2f}s")
 
+
+def frost_breath():
+    """The Frost Dragon's breath: an icy wind and hiss, tinkling ice crystals and cracking ice."""
+    dur = 2.7
+    t = t_axis(dur)
+    n = len(t)
+    wind = bandpass(rng.standard_normal(n), 900, 7000) * (0.7 + 0.3 * smooth_noise(n, 6))
+    hiss = bandpass(rng.standard_normal(n), 4000, 12000) * 0.5 * (0.8 + 0.2 * smooth_noise(n, 20))
+    tink = np.zeros(n)
+    for _ in range(170):
+        i0 = int(rng.uniform(0.05, dur - 0.1) * SR)
+        seg = np.arange(min(int(0.06 * SR), n - i0)) / SR
+        tink[i0:i0 + len(seg)] += np.sin(2 * np.pi * rng.uniform(2500, 7500) * seg) * np.exp(-seg / 0.012) * rng.uniform(0.2, 1.0)
+    crack = np.zeros(n)
+    idx = rng.choice(n, 90, replace=False)
+    crack[idx] = rng.uniform(-1, 1, len(idx))
+    crack = bandpass(crack, 1200, 6000) * 4
+    voice = roar(dur, 70, rise=0.12, fall=0.2, breath=1.0, attack=0.2, release=0.6,
+                 throat=((300, 140, 1.0), (800, 260, 1.1), (1700, 400, 0.6))) * 0.25
+    x = wind + hiss + tink * 0.6 + crack + voice
+    whoosh = 1 + 0.7 * np.exp(-t / 0.2)                            # burst as the frost comes out
+    return x * whoosh * envelope(n, 0.08, 0.6)
+
+
+# python3 tools/make_sounds.py          -> every sound
+# python3 tools/make_sounds.py frost    -> only the Frost Dragon's
+which = sys.argv[1:] or ["red", "frost"]
+if "frost" in which:
+    FROST_OUT = "src/main/resources/assets/wildcreatures/sounds/frost_dragon"
+    os.makedirs(FROST_OUT, exist_ok=True)
+    frost_rng = np.random.default_rng(23)
+if "red" not in which:
+    rng = frost_rng
+    save("breath", frost_breath(), out=FROST_OUT)
+    sys.exit()
 
 os.makedirs(OUT, exist_ok=True)
 save("roar1", roar(2.6, 78))
@@ -184,3 +221,6 @@ save("bite", bite())
 save("breath", breath())
 save("flap", flap())
 save("step", step(), peak=0.8)
+if "frost" in which:
+    rng = frost_rng
+    save("breath", frost_breath(), out=FROST_OUT)

@@ -1,0 +1,10 @@
+{
+  "type": "forge:add_spawns",
+  "biomes": "#wildcreatures:frost_dragon_habitat",
+  "spawners": {
+    "type": "wildcreatures:frost_dragon",
+    "weight": 6,
+    "minCount": 1,
+    "maxCount": 1
+  }
+}

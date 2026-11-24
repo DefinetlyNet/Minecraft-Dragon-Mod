@@ -6,7 +6,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
-/** The dragon's own sounds. The .ogg files are made by tools/make_sounds.py. */
+/** The dragons' sounds. Every kind shares the red_dragon ones except its breath. The .ogg files are made by tools/make_sounds.py. */
 public final class ModSounds {
     private ModSounds() {}
 
@@ -19,6 +19,7 @@ public final class ModSounds {
     public static final RegistryObject<SoundEvent> DRAGON_BREATH = register("red_dragon.breath");
     public static final RegistryObject<SoundEvent> DRAGON_FLAP = register("red_dragon.flap");
     public static final RegistryObject<SoundEvent> DRAGON_STEP = register("red_dragon.step");
+    public static final RegistryObject<SoundEvent> FROST_DRAGON_BREATH = register("frost_dragon.breath");
 
     private static RegistryObject<SoundEvent> register(String name) {
         return SOUNDS.register(name, () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(WildCreatures.MOD_ID, name)));

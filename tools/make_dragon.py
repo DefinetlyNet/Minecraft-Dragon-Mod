@@ -1,19 +1,30 @@
-"""Generates the Red Dragon's 3D model (Java layer definition) and its textures.
+"""Generates the dragons' shared 3D model (Java layer definition) and each kind's textures.
 
-Run from the project root:  python3 tools/make_dragon.py
+Run from the project root:  python3 tools/make_dragon.py   (needs Pillow and numpy)
 Then rebuild the mod. Every part is a list of boxes in Minecraft model pixels
-(16 = one block, before the renderer scales the dragon up). Y points DOWN and the
+(16 = one block, before the renderer scales the dragon up 1.8x). Y points DOWN and the
 dragon faces -Z, as in all vanilla entity models. The ground is at y = 24.
+
+The body is lean and athletic: a deep chest, a tucked-up waist, a long S-shaped neck,
+long legs (the hind legs stand on their toes like a cat's) and big wings.
+The skins are painted smoothly: every part fades from a dark back through the flanks
+to a light belly, with soft scales and gentle mottling, so the colours blend.
 """
-import random
+import math
+
+import numpy as np
 from PIL import Image
 
-random.seed(7)
-JAVA = "src/main/java/com/wildcreatures/client/RedDragonLayer.java"
-TEX = "src/main/resources/assets/wildcreatures/textures/entity/red_dragon.png"
-GLOW = "src/main/resources/assets/wildcreatures/textures/entity/red_dragon_eyes.png"
+JAVA = "src/main/java/com/wildcreatures/client/DragonLayer.java"
+TEXDIR = "src/main/resources/assets/wildcreatures/textures/entity/"
+ITEMDIR = "src/main/resources/assets/wildcreatures/textures/item/"
 
 PARTS = []  # (name, parent, pivot, rot, boxes) in parent-first order
+
+
+def q(v):
+    """Sizes snap to quarter pixels so every face lines up with the 4x texture grid."""
+    return round(v * 4) / 4
 
 
 def part(name, parent, pivot, rot=(0, 0, 0), boxes=()):
@@ -22,7 +33,7 @@ def part(name, parent, pivot, rot=(0, 0, 0), boxes=()):
 
 def box(x, y, z, w, h, d, mat="scale", **faces):
     """faces may override a face's material: top/bottom/front/back/left/right."""
-    return dict(o=(x, y, z), s=(w, h, d), mat=mat, faces=faces)
+    return dict(o=(x, y, z), s=(q(w), q(h), q(d)), mat=mat, faces=faces)
 
 
 def mirror_box(b):
@@ -42,111 +53,143 @@ def sided(name_r, parent, pivot, rot, boxes):
          [mirror_box(b) for b in boxes])
 
 
-BELLY = dict(bottom="belly")
+def spikes(top, zs, height, width=1.2):
+    """A row of slim two-step spikes standing on a surface at y = top."""
+    out = []
+    for z in zs:
+        out.append(box(-width / 2, top - height * 0.6, z, width, height * 0.6, width * 1.8, "spike"))
+        out.append(box(-width * 0.3, top - height, z + width * 0.45, width * 0.6, height * 0.4, width, "spike"))
+    return out
+
 
 # ---------------- body ----------------
-part("body", "root", (0, 4, 0), boxes=[
-    box(-8, -7, -14, 16, 14, 28, **BELLY),
-    box(-7, -5, -17, 14, 13, 4, front="belly", bottom="belly"),     # chest
-    box(-6, 7, -13, 12, 1, 24, "belly"),                            # belly plates
-    box(-7, -8, -11, 14, 1, 23, "ridge"),                           # darker back
-    box(-6, -9, -8, 12, 1, 16, "ridge"),                            # spine ridge
-    box(-9, -5, -14, 1, 9, 8), box(8, -5, -14, 1, 9, 8),            # shoulder muscles
-    box(-9, -4, 4, 1, 9, 9), box(8, -4, 4, 1, 9, 9),                # hip muscles
-] + [box(-1, -12, z, 2, 3, 4, "spike") for z in (-13, -7, -1, 5)]
-  + [box(-0.5, -14, z + 1, 1, 2, 2, "spike") for z in (-13, -7, -1, 5)]
-  + [box(-0.5, -11, z, 1, 2, 3, "spike") for z in (-4, 2, 9)]
-  + [box(x, -10, z, 1, 1, 2, "spike") for z in (-10, -4, 2, 8) for x in (-4.5, 3.5)])
+# A deep ribcage that narrows to a tucked-up waist and lean hips.
+part("body", "root", (0, 5.5, 0), boxes=[
+    box(-5.5, -6, -16, 11, 12, 13),                                  # ribcage
+    box(-4.5, -5, -18, 9, 10, 2),                                    # breastbone
+    box(-4.5, -5.5, -3, 9, 9.5, 8.5),                                # waist
+    box(-5, -6, 5, 10, 9, 9),                                        # hips
+    box(-4, -5, 14, 8, 7, 1.5),                                      # rump, narrowing into the tail
+    box(-2, -7, -15, 4, 1, 29, "ridge"),                             # spine
+    box(-6, -4.5, -15, 0.5, 7, 7.5), box(5.5, -4.5, -15, 0.5, 7, 7.5),   # shoulder muscles
+    box(-5.5, -4.5, 6, 0.5, 7, 7), box(5, -4.5, 6, 0.5, 7, 7),           # haunches
+] + [b for z, hgt in ((-14.5, 2.2), (-11, 2.8), (-7.5, 3.0), (-4, 2.8), (-0.5, 2.5),
+                      (3, 2.3), (6.5, 2.1), (10, 1.8), (13, 1.5))
+     for b in spikes(-7, [z], hgt)])
 
 # ---------------- neck and head ----------------
-part("neck1", "body", (0, -2, -15), (-0.65, 0, 0), [
-    box(-4.5, -4.5, -11, 9, 9, 12, **BELLY),
-    box(-1, -7.5, -9, 2, 3, 3, "spike"), box(-1, -7.5, -4, 2, 3, 3, "spike"),
-    box(-5.5, -3, -9, 1, 5, 7, "membrane"), box(4.5, -3, -9, 1, 5, 7, "membrane")])   # neck frills
-part("neck2", "neck1", (0, 0, -10), (0.2, 0, 0), [
-    box(-3.5, -3.5, -11, 7, 7, 12, **BELLY),
-    box(-1, -6, -8, 2, 3, 3, "spike"), box(-1, -6, -3, 2, 3, 3, "spike"),
-    box(-4.5, -2, -9, 1, 4, 7, "membrane"), box(3.5, -2, -9, 1, 4, 7, "membrane")])
-part("head", "neck2", (0, 0, -10), (0.45, 0, 0), [
-    box(-5, -5, -9, 10, 8, 10, bottom="belly"),                   # skull
-    box(-3.5, -3, -19, 7, 5, 10, bottom="mouth"),                   # upper snout
-    box(-3, -4, -18, 6, 1, 7, "ridge"),                             # snout ridge
-    box(-5.5, -6, -9, 4, 2, 5, "ridge"), box(1.5, -6, -9, 4, 2, 5, "ridge"),   # brows
-    box(-5.5, -7, -6, 1, 1, 2, "spike"), box(4.5, -7, -6, 1, 1, 2, "spike"),   # brow spikes
-    box(-3, -3.5, -19, 2, 1, 2, "ridge"), box(1, -3.5, -19, 2, 1, 2, "ridge"),  # nostril rims
-    box(-2.5, -3.2, -19.2, 1, 1, 1, "nostril"), box(1.5, -3.2, -19.2, 1, 1, 1, "nostril"),
-    box(-1, -5, -16, 2, 2, 3, "bone"), box(-0.5, -6, -15, 1, 1, 2, "bone"),   # nose horn
-    box(-5.5, -4, -8, 1, 2, 3, "eye"), box(4.5, -4, -8, 1, 2, 3, "eye"),
-    box(-6.5, -2, -3, 2, 2, 6, "bone"), box(4.5, -2, -3, 2, 2, 6, "bone"),     # cheek spikes
-    box(-6, 0, -1, 1, 1, 4, "bone"), box(5, 0, -1, 1, 1, 4, "bone"),
-    box(-5.5, -4, 0, 1, 6, 3, "membrane"), box(4.5, -4, 0, 1, 6, 3, "membrane"),  # ear frills
-] + [box(x, 2, z, 1, 2, 1, "tooth") for z in (-16, -14, -12, -10) for x in (-3.2, 2.2)]
-  + [box(x, 2, -18.5, 1, 3, 1, "tooth") for x in (-2.7, 1.7)])                   # front fangs
-part("jaw", "head", (0, 2, -7), (0.05, 0, 0), [
-    box(-3, 0, -12, 6, 3, 12, top="mouth", bottom="belly"),
-    box(-2, -0.5, -10, 4, 1, 8, "tongue"),
-    box(-1, 2.5, -4, 2, 2, 3, "spike"),                              # chin spike
-    box(-3.5, 1, -4, 1, 1, 3, "spike"), box(2.5, 1, -4, 1, 1, 3, "spike"),     # jaw spikes
-] + [box(x, -2, z, 1, 2, 1, "tooth") for z in (-11, -9, -7, -5) for x in (-2.5, 1.5)])
-sided("horn_r", "head", (3, -4, -2), (0.5, 0.3, 0), [box(-1, -1, 0, 2, 2, 10, "bone")])
-sided("horn_tip_r", "horn_r", (0, 0, 9), (0.4, 0, 0), [box(-0.5, -0.5, 0, 1, 1, 6, "horntip")])
-sided("horn2_r", "head", (4.5, -2, -1), (0.2, 0.7, 0), [box(-0.5, -0.5, 0, 1, 1, 6, "bone")])
+part("neck1", "body", (0, -2.5, -17), (-0.7, 0, 0), [
+    box(-3.5, -3.5, -12, 7, 7, 13),
+    box(-1.5, -4, -11, 3, 0.5, 11, "ridge"),
+] + spikes(-4, (-10, -6.5, -3), 1.8, 1.0))
+part("neck2", "neck1", (0, 0, -11.5), (0.25, 0, 0), [
+    box(-3, -3, -12, 6, 6, 13),
+    box(-1.25, -3.5, -11, 2.5, 0.5, 11, "ridge"),
+] + spikes(-3.5, (-10, -6.5, -3), 1.5, 0.9))
+part("head", "neck2", (0, 0, -11.5), (0.45, 0, 0), [
+    box(-3.5, -3.5, -7, 7, 5.5, 8),                                  # skull
+    box(-2.5, -2.5, -16, 5, 3.5, 9.5, bottom="mouth"),               # snout
+    box(-2, -3, -15.5, 4, 0.5, 8.5, "ridge"),                        # snout ridge
+    box(-4, -4.5, -7, 2.75, 1.25, 4.5, "ridge"), box(1.25, -4.5, -7, 2.75, 1.25, 4.5, "ridge"),  # brows
+    box(-3.75, -3, -6, 0.5, 1.5, 2.5, "eye"), box(3.25, -3, -6, 0.5, 1.5, 2.5, "eye"),
+    box(-2, -3, -16.25, 1.25, 1, 1.5, "ridge"), box(0.75, -3, -16.25, 1.25, 1, 1.5, "ridge"),     # nostril rims
+    box(-1.75, -2.5, -16.5, 0.75, 0.5, 0.5, "nostril"), box(1, -2.5, -16.5, 0.75, 0.5, 0.5, "nostril"),
+    box(-0.5, -3.75, -14.5, 1, 0.75, 2.5, "bone"),                   # little nose horn
+    box(-4.25, -1, -2.5, 0.75, 1.5, 4, "bone"), box(3.5, -1, -2.5, 0.75, 1.5, 4, "bone"),         # cheek spurs
+    box(-3.75, -3, 0.5, 0.5, 3.5, 3, "membrane"), box(3.25, -3, 0.5, 0.5, 3.5, 3, "membrane"),    # ear frills
+] + [box(x, 1, z, 0.75, 1.25, 0.75, "tooth") for z in (-14.5, -12.5, -10.5, -8.5) for x in (-2.25, 1.5)]
+  + [box(x, 1, -15.75, 0.75, 2, 0.75, "tooth") for x in (-1.75, 1)])                              # fangs
+part("jaw", "head", (0, 1, -6.5), (0.05, 0, 0), [
+    box(-2.25, 0, -9.5, 4.5, 1.75, 10, top="mouth"),
+    box(-1.5, -0.5, -8, 3, 0.5, 6.5, "tongue"),
+    box(-0.5, 1.5, -3, 1, 1.25, 2.5, "spike"),                       # chin spike
+] + [box(x, -1, z, 0.75, 1, 0.75, "tooth") for z in (-9, -7, -5, -3) for x in (-2, 1.25)])
+sided("horn_r", "head", (2.25, -3.25, -1), (0.55, 0.22, 0), [box(-0.75, -0.75, 0, 1.5, 1.5, 9, "bone")])
+sided("horn_tip_r", "horn_r", (0, 0, 8.5), (0.4, 0, 0), [box(-0.5, -0.5, 0, 1, 1, 7, "horntip")])
+sided("horn2_r", "head", (3.25, -1.5, -0.5), (0.2, 0.55, 0), [box(-0.5, -0.5, 0, 1, 1, 5, "bone")])
 
 # ---------------- tail ----------------
-part("tail1", "body", (0, -3, 13), (-0.25, 0, 0), [
-    box(-5, -5, 0, 10, 10, 12, **BELLY),
-    box(-1, -8, 2, 2, 3, 3, "spike"), box(-1, -8, 7, 2, 3, 3, "spike"),
-    box(-0.5, -9, 3, 1, 1, 2, "spike"), box(-0.5, -9, 8, 1, 1, 2, "spike")])
-part("tail2", "tail1", (0, 0, 11), (-0.1, 0, 0), [
-    box(-4, -4, 0, 8, 8, 12, **BELLY),
-    box(-1, -6.5, 3, 2, 3, 3, "spike"), box(-1, -6.5, 8, 2, 3, 3, "spike")])
-part("tail3", "tail2", (0, 0, 11), (0.12, 0, 0), [
-    box(-3, -3, 0, 6, 6, 12, **BELLY),
-    box(-0.5, -5, 4, 1, 2, 3, "spike"), box(-0.5, -5, 8, 1, 2, 3, "spike")])
-part("tail4", "tail3", (0, 0, 11), (0.15, 0, 0), [
-    box(-2, -2, 0, 4, 4, 12, **BELLY), box(-0.5, -3.5, 2, 1, 2, 3, "spike"), box(-0.5, -3.5, 7, 1, 2, 3, "spike")])
-part("tail_tip", "tail4", (0, 0, 11), boxes=[
-    box(-1.5, -1.5, 0, 3, 3, 3),
-    box(-4.5, -0.5, 1, 9, 1, 4, "spike"), box(-3, -0.5, 5, 6, 1, 3, "spike"),
-    box(-1.5, -0.5, 8, 3, 1, 2, "spike"), box(-0.5, -0.5, 10, 1, 1, 2, "spike"),
-    box(-0.5, -3, 1, 1, 2, 4, "spike")])
+part("tail1", "body", (0, -2.5, 15), (-0.22, 0, 0), [
+    box(-3.75, -3.75, -1, 7.5, 7.5, 13), box(-1.5, -4.25, 0, 3, 0.5, 11, "ridge")] + spikes(-4.25, (1.5, 5.5, 9.5), 1.8, 1.0))
+part("tail2", "tail1", (0, 0, 11.5), (-0.08, 0, 0), [
+    box(-3, -3, -1, 6, 6, 13), box(-1.25, -3.5, 0, 2.5, 0.5, 11, "ridge")] + spikes(-3.5, (1.5, 5.5, 9.5), 1.5, 0.9))
+part("tail3", "tail2", (0, 0, 11.5), (0.1, 0, 0), [
+    box(-2.25, -2.25, -1, 4.5, 4.5, 13)] + spikes(-2.25, (2, 7), 1.2, 0.75))
+part("tail4", "tail3", (0, 0, 11.5), (0.12, 0, 0), [
+    box(-1.5, -1.5, -1, 3, 3, 13)] + spikes(-1.5, (3, 8), 0.9, 0.6))
+part("tail_tip", "tail4", (0, 0, 11.5), boxes=[
+    box(-1, -1, -1, 2, 2, 4),
+    box(-3.5, -0.25, 1, 7, 0.5, 3, "spike"), box(-2.5, -0.25, 4, 5, 0.5, 2.5, "spike"),
+    box(-1.5, -0.25, 6.5, 3, 0.5, 2, "spike"), box(-0.5, -0.25, 8.5, 1, 0.5, 1.5, "spike")])
+
 
 # ---------------- legs (right side, mirrored to the left) ----------------
 def toes(z):
     out = []
-    for x in (-2.5, -0.5, 1.5):
-        out.append(box(x, -0.5, z, 1, 1.5, 2))                   # toe
-        out.append(box(x, 0, z - 1.5, 1, 1, 2, "claw"))          # talon
-    out.append(box(-0.5, 0, 1.5, 1, 1, 2, "claw"))               # back claw
+    for x in (-1.55, -0.45, 0.65):
+        out.append(box(x, -0.25, z - 1.75, 0.9, 1.25, 2))               # toe
+        out.append(box(x + 0.1, 0.35, z - 2.75, 0.7, 0.65, 1.25, "claw"))  # talon
+    out.append(box(-0.4, 0.25, 1, 0.8, 0.75, 1.5, "claw"))               # dew claw at the back
     return out
 
-sided("front_leg_r", "body", (8, 4, -9), (0, 0, 0), [
-    box(-2, -2, -3, 5, 11, 6), box(-1.5, -3, -3.5, 5, 6, 7)])
-sided("front_shin_r", "front_leg_r", (0.5, 8, 0), (0, 0, 0), [
-    box(-2, 0, -2.5, 4, 7, 5), box(-0.5, 1, 2.5, 1, 2, 2, "spike")])
-sided("front_foot_r", "front_shin_r", (0, 7, 0), (0, 0, 0), [box(-2.5, 0, -3, 5, 1, 5)] + toes(-5))
-sided("hind_leg_r", "body", (8, 3, 9), (0, 0, 0), [
-    box(-2.5, -4, -5, 6, 13, 9), box(-2, -5, -4, 6, 8, 8)])
-sided("hind_shin_r", "hind_leg_r", (0.5, 8, 2), (0, 0, 0), [
-    box(-2, 0, -2, 4, 8, 4), box(-0.5, -1, 2, 1, 2, 2, "spike")])
-sided("hind_foot_r", "hind_shin_r", (0, 8, 0), (0, 0, 0), [box(-2.5, 0, -3, 5, 1, 6)] + toes(-5))
+
+sided("front_leg_r", "body", (5, 2.5, -11), (0.25, 0, 0), [
+    box(-2.25, -4, -2.75, 4.5, 7.5, 5.5),                            # shoulder
+    box(-2, 2.5, -2.1, 4, 4.5, 4.25)])                               # upper arm
+sided("front_shin_r", "front_leg_r", (0, 6, 0), (-0.45, 0, 0), [
+    box(-1.6, -0.5, -1.6, 3.25, 9.75, 3.25),
+    box(-0.4, 0.5, 1.5, 0.75, 1.5, 1.5, "spike")])                   # elbow spur
+sided("front_foot_r", "front_shin_r", (0, 9.38, 0), (0.2, 0, 0), [box(-1.9, 0, -2.25, 3.75, 1, 3.75)] + toes(-2.25))
+sided("hind_leg_r", "body", (4.5, 0.5, 9.5), (-0.55, 0, 0), [
+    box(-2.5, -4.5, -3.75, 5, 9, 7.5),                               # thigh
+    box(-2, 4, -2.5, 4, 4.5, 5)])
+sided("hind_shin_r", "hind_leg_r", (0, 8, 0), (1.25, 0, 0), [
+    box(-1.5, -0.5, -1.5, 3, 8.25, 3),
+    box(-0.4, -1, 1.25, 0.75, 1.5, 1.5, "spike")])                   # heel spur
+sided("hind_foot_r", "hind_shin_r", (0, 7.5, 0), (-0.85, 0, 0), [box(-1.25, -0.5, -1.25, 2.5, 5.25, 2.5)])
+sided("hind_paw_r", "hind_foot_r", (0, 4.5, 0), (0.15, 0, 0), [box(-1.9, 0, -2.25, 3.75, 1, 3.75)] + toes(-2.25))
 
 # ---------------- wings ----------------
-inner = [(0, 22), (5, 19), (10, 21), (15, 17)]
-sided("wing_r", "body", (6, -6, -6), (0, 0, 0), [
-    box(0, -1.5, -1.5, 20, 3, 3), box(1, -2, -1, 8, 1, 2, "ridge"),
-] + [box(x, -0.5, 1, 5, 1, d, "membrane") for x, d in inner]
-  + [box(x, -1, 1, 1, 1, d - 2, "strut") for x, d in ((5, 19), (10, 21), (15, 17))]   # finger struts
-  + [box(18.5, -3.5, -1.5, 2, 2, 2, "claw"), box(19, -5, -1, 1, 2, 1, "claw")])
-tip = [(0, 20), (3, 17), (6, 18), (9, 14), (12, 12), (15, 9)]
-sided("wing_tip_r", "wing_r", (20, 0, 0), (0, 0, 0), [
-    box(0, -1, -1, 18, 2, 2), box(17, -1.5, -1.5, 2, 2, 2, "claw"),
-] + [box(x, -0.5, 1, 3, 1, d, "membrane") for x, d in tip]
-  + [box(x, -1, 1, 1, 1, d - 2, "strut") for x, d in ((3, 17), (9, 14), (15, 9))])
+# The membrane is a run of thin strips; each strip's depth follows the trailing edge,
+# which scallops in between the finger bones like a bat's.
+WING_IN, WING_OUT = 22.0, 20.0
+STRUTS_IN, STRUTS_OUT = (7.5, 15.0), (5.0, 10.0, 15.0)
+
+
+def edge_depth(x, length, root, end, struts, dip):
+    base = root + (end - root) * (x / length) ** 1.4
+    joints = (0.0,) + struts + (length,)
+    for a, b in zip(joints, joints[1:]):
+        if a <= x <= b:
+            return base - dip * math.sin(math.pi * (x - a) / (b - a))
+    return base
+
+
+def membrane(length, root, end, struts, dip, strip=1.5):
+    out, x = [], 0.0
+    while x < length - 0.01:
+        w = min(strip, length - x)
+        d = edge_depth(x + w / 2, length, root, end, struts, dip)
+        out.append(box(x, -0.25, 0.75, w, 0.5, max(1.0, d), "membrane"))
+        x += w
+    for s in struts:
+        out.append(box(s - 0.375, -0.5, 0.75, 0.75, 0.75, edge_depth(s, length, root, end, struts, dip) - 1, "strut"))
+    return out
+
+
+sided("wing_r", "body", (4.5, -5.5, -11), (0, 0, 0), [
+    box(0, -1, -1, WING_IN + 0.5, 2, 2),                             # arm bone
+    box(0.5, -1.5, -0.75, 9, 0.5, 1.5, "ridge"),                     # muscle along the top
+    box(WING_IN - 1, -2.25, -1, 1.25, 1.5, 1.25, "claw"),            # thumb claw
+] + membrane(WING_IN, 21.0, 17.0, STRUTS_IN, 3.0))
+sided("wing_tip_r", "wing_r", (WING_IN, 0, 0), (0, 0, 0), [
+    box(0, -0.75, -0.75, WING_OUT, 1.5, 1.5),                        # finger bone
+    box(WING_OUT - 0.5, -1, -1, 1.25, 1.25, 1.25, "claw"),
+] + membrane(WING_OUT, 17.0, 1.5, STRUTS_OUT, 2.5))
+
 
 # ---------------- UV packing ----------------
 def footprint(b):
-    import math
     w, h, d = b["s"]
     return math.ceil(2 * d + 2 * w), math.ceil(d + h)
 
@@ -167,147 +210,335 @@ while TH < y + row_h:
     TH *= 2
 print(f"texture {TW}x{TH}, {len(all_boxes)} boxes in {len(PARTS)} parts")
 
+
+# ---------------- rest pose: where every part sits in model space ----------------
+def rot_zyx(rx, ry, rz):
+    cx, sx, cy, sy, cz, sz = math.cos(rx), math.sin(rx), math.cos(ry), math.sin(ry), math.cos(rz), math.sin(rz)
+    rxm = np.array([[1, 0, 0], [0, cx, -sx], [0, sx, cx]])
+    rym = np.array([[cy, 0, sy], [0, 1, 0], [-sy, 0, cy]])
+    rzm = np.array([[cz, -sz, 0], [sz, cz, 0], [0, 0, 1]])
+    return rzm @ rym @ rxm
+
+
+POSE = {"root": (np.eye(3), np.zeros(3))}
+for name, parent, pivot, rot, _ in PARTS:
+    pr, pt = POSE[parent]
+    POSE[name] = (pr @ rot_zyx(*rot), pt + pr @ np.array(pivot, dtype=float))
+
+
+def to_model(name, p):
+    r, t = POSE[name]
+    return t + r @ np.array(p, dtype=float)
+
+
+head_pivot = to_model("head", (0, 0, 0))
+mouth = to_model("head", (0, 1, -16))
+print(f"head pivot: {-head_pivot[2]:.1f} px forward, {24 - head_pivot[1]:.1f} px up; "
+      f"mouth: {-mouth[2]:.1f} forward, {24 - mouth[1]:.1f} up")
+for foot in ("front_foot_r", "hind_paw_r"):
+    print(f"{foot} sole at y = {to_model(foot, (0, 1, 0))[1]:.2f} (ground is 24)")
+
 # ---------------- painting ----------------
-# The texture is painted at RES texels per model pixel, so scales can be much finer
-# than one Minecraft pixel. The model still uses the TW x TH layout; Minecraft just
-# samples the bigger image.
+# Painted at RES texels per model pixel, so the scales and gradients are much finer than
+# one Minecraft pixel. The model still uses the TW x TH layout; Minecraft just samples
+# the bigger image.
 RES = 4
-COL = {
-    "scale": (172, 28, 22), "ridge": (118, 16, 14), "belly": (236, 148, 54), "spike": (64, 10, 10),
-    "membrane": (128, 30, 24), "bone": (228, 210, 170), "horntip": (72, 56, 44), "eye": (255, 206, 40),
-    "tooth": (244, 238, 218), "claw": (36, 30, 30), "nostril": (20, 4, 4), "mouth": (104, 20, 28),
-    "tongue": (170, 50, 70), "strut": (96, 14, 12),
-}
-img = Image.new("RGBA", (TW * RES, TH * RES), (0, 0, 0, 0))
-glow = Image.new("RGBA", (TW * RES, TH * RES), (0, 0, 0, 0))
-px, gpx = img.load(), glow.load()
+VARIANTS = [
+    dict(name="red_dragon",
+         dorsal=(92, 10, 16), flank=(162, 26, 24), flank2=(204, 62, 34), belly=(238, 160, 78),
+         spike_base=(118, 18, 18), spike_tip=(38, 8, 10), ridge=0.85,
+         horn_base=(232, 214, 178), horn_mid=(176, 148, 112), horn_tip=(48, 36, 32),
+         membrane_root=(112, 18, 20), membrane_edge=(196, 70, 42), vein=(84, 12, 14),
+         strut=(104, 16, 16), leg_dark=(70, 10, 12),
+         eye=(255, 214, 60), eye_rim=(226, 96, 14), pupil=(20, 8, 4),
+         claw=(36, 28, 30), tooth=(240, 232, 208), mouth=(92, 18, 26), tongue=(168, 52, 72), nostril=(22, 6, 6),
+         scale_edge=-0.07, rime=0.0),
+    dict(name="frost_dragon",
+         dorsal=(134, 178, 216), flank=(186, 214, 238), flank2=(220, 236, 248), belly=(246, 250, 255),
+         spike_base=(176, 218, 242), spike_tip=(240, 250, 255), ridge=0.92,
+         horn_base=(246, 250, 253), horn_mid=(204, 226, 244), horn_tip=(104, 146, 196),
+         membrane_root=(160, 198, 230), membrane_edge=(236, 246, 253), vein=(132, 174, 216),
+         strut=(150, 188, 224), leg_dark=(118, 160, 206),
+         eye=(170, 240, 255), eye_rim=(40, 122, 222), pupil=(10, 22, 52),
+         claw=(64, 84, 116), tooth=(246, 250, 255), mouth=(74, 86, 132), tongue=(122, 102, 172), nostril=(34, 54, 86),
+         scale_edge=-0.03, rime=0.10,
+         item_gradient=[(20, (40, 70, 120)), (70, (150, 196, 232)), (120, (210, 232, 248)), (190, (250, 253, 255))]),
+]
+
+BODY_LIKE = ("body", "neck1", "neck2", "head", "jaw", "tail1", "tail2", "tail3", "tail4", "tail_tip")
+SCALE_SIZE = {"body": 10, "tail1": 9, "neck1": 8, "neck2": 7, "tail2": 8, "tail3": 7, "tail4": 6, "tail_tip": 5,
+              "head": 5, "jaw": 5}
 
 
-def clamp(c):
-    return tuple(max(0, min(255, int(v))) for v in c) + (255,)
+def is_limb(name):
+    return any(k in name for k in ("leg", "shin", "foot", "paw"))
 
 
-def h01(a, b, salt=0):
-    """Stable pseudo-random number in 0..1 for a cell."""
-    v = (a * 73856093) ^ (b * 19349663) ^ (salt * 83492791)
-    return ((v * 2654435761) & 0xFFFF) / 65535.0
+def core_range(boxes):
+    """Vertical extent of a part's biggest box: its back is 0, its belly 1."""
+    main = max(boxes, key=lambda b: b["s"][0] * b["s"][1] * b["s"][2] if b["mat"] == "scale" else 0)
+    return main["o"][1], main["o"][1] + main["s"][1]
 
 
-def scale_shade(x, y, cw=8, ch=5):
-    """Brightness of overlapping, rounded scales laid like roof shingles (the row above
-    covers the top of the row below, so each scale shows a rounded lower edge).
-    x, y in texels on the face. Returns (brightness, row, col)."""
+def smoothstep(a, b, t):
+    t = np.clip((t - a) / (b - a), 0.0, 1.0)
+    return t * t * (3 - 2 * t)
+
+
+def ramp(stops, t):
+    """Smoothly blended colour ramp: stops = [(pos, (r, g, b)), ...]."""
+    t = np.clip(t, 0.0, 1.0)
+    out = np.zeros(t.shape + (3,))
+    out[...] = stops[0][1]
+    for (p0, c0), (p1, c1) in zip(stops, stops[1:]):
+        k = smoothstep(p0, p1, t)[..., None]
+        sel = (t >= p0)[..., None]
+        out = np.where(sel, np.array(c0) + (np.array(c1) - np.array(c0)) * k, out)
+    return out
+
+
+def mix(a, b, t):
+    return np.array(a, dtype=float) + (np.array(b, dtype=float) - np.array(a, dtype=float)) * np.asarray(t)[..., None]
+
+
+def hash3(ix, iy, iz, salt):
+    v = (ix.astype(np.int64) * 73856093) ^ (iy.astype(np.int64) * 19349663) ^ (iz.astype(np.int64) * 83492791) ^ (salt * 2654435761)
+    v = (v * 2246822519) & 0xFFFFFFFF
+    v ^= v >> 13
+    return (v & 0xFFFF) / 65535.0
+
+
+def vnoise(p, scale, salt):
+    """Smooth 3D value noise in -1..1, continuous across faces and parts."""
+    x, y, z = p[0] / scale, p[1] / scale, p[2] / scale
+    ix, iy, iz = np.floor(x), np.floor(y), np.floor(z)
+    fx, fy, fz = smoothstep(0, 1, x - ix), smoothstep(0, 1, y - iy), smoothstep(0, 1, z - iz)
+    out = 0.0
+    for dx in (0, 1):
+        for dy in (0, 1):
+            for dz in (0, 1):
+                w = (fx if dx else 1 - fx) * (fy if dy else 1 - fy) * (fz if dz else 1 - fz)
+                out = out + w * hash3(ix + dx, iy + dy, iz + dz, salt)
+    return out * 2 - 1
+
+
+def scale_pattern(I, J, cw):
+    """Overlapping rounded scales laid like roof shingles: each one shows its rounded lower edge.
+    Returns (shade, edge 0..1) per texel."""
+    ch = cw * 0.62
     R = cw * 0.64
-    first = int((y - R) // ch)
-    for row in range(first, first + 4):
+    best_d = np.full(I.shape, 9.0)
+    found = np.zeros(I.shape, bool)
+    first = np.floor((J - R) / ch)
+    for k in range(4):
+        row = first + k
         cy = row * ch
-        if abs(y + 0.5 - cy) > R:
-            continue
         off = (row % 2) * cw / 2
-        col = int((x + 0.5 - off) // cw + 0.5)
-        for c in (col - 1, col, col + 1):
-            cx = c * cw + off
-            dx, dy = x + 0.5 - cx, y + 0.5 - cy
-            dist = (dx * dx + dy * dy) ** 0.5 / R
-            if dist <= 1.0:
-                var = (h01(row, c) - 0.5) * 0.14
-                k = 1.15 - 0.38 * dist + var
-                if dy < 0:
-                    k -= 0.15                       # tucked under the row above
-                if abs(dx) < 0.8 and dy > 0:
-                    k += 0.07                       # keel down the middle
-                if dist > 0.82:
-                    k = 0.7 + var * 0.5             # dark outline
-                return k, row, c
-    return 0.6, 0, 0
+        col = np.floor((I + 0.5 - off) / cw + 0.5)
+        for dc in (-1, 0, 1):
+            cx = (col + dc) * cw + off
+            dx, dy = I + 0.5 - cx, J + 0.5 - cy
+            dist = np.sqrt(dx * dx + dy * dy) / R
+            take = (~found) & (dist <= 1.0)
+            best_d = np.where(take, dist, best_d)
+            found |= take
+    best_d = np.where(found, best_d, 1.0)
+    shade = 0.6 - best_d                       # bright middle, darker toward the rim
+    edge = smoothstep(0.78, 0.98, best_d)
+    return shade, edge
 
 
-def paint_face(u0, v0, fw, fh, mat, face):
-    base = COL[mat]
-    U0, V0, FW, FH = int(round(u0 * RES)), int(round(v0 * RES)), max(1, round(fw * RES)), max(1, round(fh * RES))
-    for i in range(FW):
-        for j in range(FH):
-            r, g, b = base
-            k = 1.0
-            ti, tj = i / FW, j / FH          # 0..1 across the face
-            if mat in ("scale", "ridge"):
-                sk, row, col = scale_shade(i, j)
-                k = sk
-                if face == "top":
-                    k *= 0.8 if mat == "scale" else 0.9
-                elif face in ("left", "right", "front", "back"):
-                    k *= 0.86 + 0.2 * tj    # darker along the back, lighter low down
-                # a few scales tinted orange for variety
-                if h01(row, col, 5) > 0.93:
-                    r, g, b = r * 1.08, g * 1.6, b
-            elif mat == "belly":
-                plate = RES * 2
-                pj = j % plate
-                k = 1.08 - 0.2 * pj / plate
-                if pj >= plate - 1:
-                    k = 0.76
-                if i < 1 or i >= FW - 1:
-                    k *= 0.8
-                k *= 1.0 + (h01(j // plate, 0, 9) - 0.5) * 0.1
-            elif mat == "membrane":
-                k = 0.85 + 0.25 * (1 - tj) if face in ("top", "bottom") else 0.8
-                if face in ("top", "bottom"):
-                    # thin veins branching across the membrane
-                    if i % (RES * 3) == 0 or (j + i // 2) % (RES * 5) == 0:
-                        r, g, b = 170, 52, 36
-                    if tj > 0.92:
-                        k *= 0.7             # darker trailing edge
-            elif mat == "spike":
-                k = 1.25 - 0.6 * (1 - tj) if face in ("left", "right", "front", "back") else 0.7
-                if i in (0, FW - 1):
-                    k *= 0.8
-            elif mat == "strut":
-                k = 1.1 if j % RES < 2 else 0.85
-            elif mat == "eye":
-                if face in ("left", "right", "front"):
-                    cx = abs(ti - 0.5)
-                    if cx < 0.1:
-                        r, g, b = 15, 8, 4               # slit pupil
-                    else:
-                        k = 1.05 - cx * 0.6              # iris: bright centre, orange rim
-                        g = g * (1.05 - cx * 0.9)
-                    if ti < 0.25 and tj < 0.3:
-                        r, g, b, k = 255, 250, 220, 1.0  # glint
-            elif mat in ("bone", "horntip"):
-                along = tj if face in ("top", "bottom") else ti
-                k = 1.05 - 0.4 * along
-                if (int(along * fh * RES) if face in ("top", "bottom") else i) % (RES * 2) == 0:
-                    k *= 0.85                              # growth rings
-                if face in ("left", "right"):
-                    k *= 0.92
-            elif mat == "tooth":
-                k = 0.8 + 0.25 * tj
-            elif mat == "claw":
-                k = 1.6 if (i == 1 and j < FH - 1) else 1.0
-            elif mat in ("mouth", "tongue"):
-                k = 0.85 + 0.25 * tj
-                if mat == "tongue" and abs(ti - 0.5) < 0.06:
-                    k *= 0.75
-            n = random.randint(-5, 5)
-            px[U0 + i, V0 + j] = clamp((r * k + n, g * k + n, b * k + n))
-            if mat == "eye":
-                gpx[U0 + i, V0 + j] = px[U0 + i, V0 + j]
-
-
-for b in all_boxes:
-    w, h, d = b["s"]
+def face_grid(b, face):
+    """Texture rectangle of one face, and the local position / outward normal of every texel on it."""
+    (x0, y0, z0), (w, h, d) = b["o"], b["s"]
     u, v = b["uv"]
-    f = b["faces"]
-    m = b["mat"]
-    paint_face(u + d, v, w, d, f.get("top", m), "top")
-    paint_face(u + d + w, v, w, d, f.get("bottom", m), "bottom")
-    paint_face(u, v + d, d, h, f.get("right", m), "right")
-    paint_face(u + d, v + d, w, h, f.get("front", m), "front")
-    paint_face(u + d + w, v + d, d, h, f.get("left", m), "left")
-    paint_face(u + 2 * d + w, v + d, w, h, f.get("back", m), "back")
+    regions = {"top": (u + d, v, w, d), "bottom": (u + d + w, v, w, d), "right": (u, v + d, d, h),
+               "front": (u + d, v + d, w, h), "left": (u + d + w, v + d, d, h), "back": (u + 2 * d + w, v + d, w, h)}
+    u0, v0, fw, fh = regions[face]
+    U0, V0 = int(round(u0 * RES)), int(round(v0 * RES))
+    FW, FH = max(1, int(round(fw * RES))), max(1, int(round(fh * RES)))
+    J, I = np.mgrid[0:FH, 0:FW].astype(float)
+    ti, tj = (I + 0.5) / FW, (J + 0.5) / FH
+    one = np.ones_like(ti)
+    if face == "top":
+        p, n = (x0 + ti * w, y0 * one, z0 + d - tj * d), (0, -1, 0)
+    elif face == "bottom":
+        p, n = (x0 + ti * w, (y0 + h) * one, z0 + d - tj * d), (0, 1, 0)
+    elif face == "right":
+        p, n = (x0 * one, y0 + tj * h, z0 + d - ti * d), (-1, 0, 0)
+    elif face == "front":
+        p, n = (x0 + ti * w, y0 + tj * h, z0 * one), (0, 0, -1)
+    elif face == "left":
+        p, n = ((x0 + w) * one, y0 + tj * h, z0 + ti * d), (1, 0, 0)
+    else:
+        p, n = (x0 + w - ti * w, y0 + tj * h, (z0 + d) * one), (0, 0, 1)
+    return (U0, V0, FW, FH), I, J, ti, tj, np.array(p), np.array(n, dtype=float)
 
-img.save(TEX)
-glow.save(GLOW)
+
+def body_t(name, ytop, ybot, py, face):
+    """0 on the back, 1 on the belly."""
+    t = np.clip((py - ytop) / max(0.5, ybot - ytop), 0.0, 1.0)
+    if face == "bottom":
+        t = np.maximum(t, 0.9)
+    if name == "jaw":
+        t = 0.45 + 0.55 * t
+    return t
+
+
+def paint_variant(v):
+    img = np.zeros((TH * RES, TW * RES, 3))
+    alpha = np.zeros((TH * RES, TW * RES))
+    glow = np.zeros((TH * RES, TW * RES, 4))
+    stops = [(0.0, v["dorsal"]), (0.38, v["flank"]), (0.72, v["flank2"]), (1.0, v["belly"])]
+    rng = np.random.default_rng(11)
+    for (name, parent, pivot, rot, boxes) in PARTS:
+        ytop, ybot = core_range(boxes)
+        rmat, tvec = POSE[name]
+        inner_wing = name in ("wing_r", "wing_l")
+        wing_len = WING_IN if inner_wing else WING_OUT
+        struts = STRUTS_IN if inner_wing else STRUTS_OUT
+        outer_sign = 1.0 if name.endswith("_r") else -1.0
+        for b in boxes:
+            (x0, y0, z0), (w, h, d) = b["o"], b["s"]
+            for face in ("top", "bottom", "right", "front", "left", "back"):
+                mat = b["faces"].get(face, b["mat"])
+                (U0, V0, FW, FH), I, J, ti, tj, p, n = face_grid(b, face)
+                px, py, pz = p
+                model = tvec[:, None, None] + np.tensordot(rmat, p, axes=1)
+                k = 1.0 + 0.035 * vnoise(model, 7.0, 1) + 0.02 * vnoise(model, 2.5, 2)
+                if mat in ("scale", "ridge"):
+                    if is_limb(name):
+                        side = n[0] * outer_sign                          # +1 outer face, -1 inner face
+                        t = 0.42 - 0.22 * side
+                        if face == "top":
+                            t = 0.2
+                        elif face == "bottom":
+                            t = 0.85
+                        col = ramp(stops, t * np.ones_like(px))
+                        g = smoothstep(10.0, 24.0, model[1])              # darker toward the feet
+                        col = col + (np.array(v["leg_dark"]) - col) * (0.55 * g)[..., None]
+                        cw = 5 if ("foot" in name or "paw" in name) else 6
+                    elif name.startswith("wing"):
+                        if face == "top":
+                            t = np.full_like(px, 0.05)
+                        elif face == "bottom":
+                            t = np.full_like(px, 0.75)
+                        else:
+                            t = np.clip((py + 1.0) / 2.0, 0, 1) * 0.8
+                        col = ramp(stops, t)
+                        cw = 5
+                    else:
+                        col = ramp(stops, body_t(name, ytop, ybot, py, face))
+                        cw = SCALE_SIZE.get(name, 6)
+                    if mat == "ridge":
+                        col = col * v["ridge"]
+                    if face == "bottom" and name in BODY_LIKE and name not in ("head", "jaw", "tail_tip"):
+                        # belly plates across the underside
+                        jz = (pz * RES) % 6.0
+                        k = k * (1.03 - 0.025 * jz / 6.0 - 0.07 * np.exp(-((jz - 5.6) / 0.7) ** 2))
+                    else:
+                        JJ = (FH - 1 - J) if face == "top" else J
+                        shade, edge = scale_pattern(I, JJ, cw)
+                        k = k * (1.0 + 0.06 * shade + v["scale_edge"] * edge)
+                        if v["rime"] and not is_limb(name) and name != "jaw":
+                            up = 1.0 - np.clip(body_t(name, ytop, ybot, py, face) / 0.45, 0, 1)
+                            col = col + (255 - col) * (v["rime"] * edge * up)[..., None]
+                elif mat == "spike":
+                    if (y0 + h / 2) < ytop:
+                        t = (ytop - py) / 3.5
+                    elif (y0 + h / 2) > ybot:
+                        t = (py - ybot) / 2.5
+                    else:
+                        t = np.abs(px) / 3.5
+                    col = mix(v["spike_base"], v["spike_tip"], smoothstep(0, 1, np.clip(t, 0, 1)))
+                    if face == "top":
+                        k = k * 1.06
+                elif mat in ("bone", "horntip"):
+                    t = np.clip((pz - z0) / max(d, 0.5), 0, 1)
+                    a, c = (v["horn_base"], v["horn_mid"]) if mat == "bone" else (v["horn_mid"], v["horn_tip"])
+                    col = mix(a, c, t)
+                    k = k * (1.0 - 0.06 * np.exp(-(((pz * RES) % 5.0 - 4.5) / 0.6) ** 2))   # faint growth rings
+                elif mat == "membrane":
+                    if name == "head":
+                        col = mix(v["membrane_root"], v["membrane_edge"], 0.7 * np.clip((pz - 0.5) / 3.0, 0, 1))
+                    else:
+                        s = np.clip((pz - 0.75) / (21.0 if inner_wing else 17.0), 0, 1)
+                        along = 0.0 if inner_wing else np.clip(px / wing_len, 0, 1)
+                        col = mix(v["membrane_root"], v["membrane_edge"], smoothstep(0, 1, 0.8 * s + 0.25 * along))
+                        vein = np.zeros_like(px)
+                        for sx in struts:
+                            vein = np.maximum(vein, np.exp(-((px - sx) / 0.35) ** 2))
+                        # thin veins fanning back from the bones
+                        fan = np.abs(((px * 0.6 + pz * 0.35) % 3.0) - 1.5)
+                        vein = np.maximum(vein, 0.5 * np.exp(-(fan / 0.12) ** 2) * smoothstep(0.1, 0.5, s) * (1 - s))
+                        col = col + (np.array(v["vein"]) - col) * (0.45 * vein)[..., None]
+                    if face == "bottom":
+                        k = k * 1.06
+                    elif face != "top":
+                        k = k * 0.9
+                elif mat == "strut":
+                    col = mix(v["strut"], v["membrane_root"], 0.4 * np.clip((pz - 0.75) / 21.0, 0, 1))
+                elif mat == "eye":
+                    if face in ("left", "right"):
+                        r = np.sqrt((ti - 0.5) ** 2 + ((tj - 0.5) * 0.8) ** 2)
+                        col = mix(v["eye"], v["eye_rim"], smoothstep(0.0, 0.6, r))
+                        slit = (np.abs(ti - 0.5) < 0.09) & (np.abs(tj - 0.5) < 0.42)
+                        col = np.where(slit[..., None], np.array(v["pupil"], float), col)
+                        col = np.where(((ti < 0.3) & (tj < 0.35))[..., None], np.array((255, 250, 230), float), col)
+                    else:
+                        col = np.array(v["eye_rim"], float) * 0.8 * np.ones(px.shape + (3,))
+                    k = 1.0
+                elif mat == "tooth":
+                    col = mix(np.array(v["tooth"]) * 0.82, v["tooth"], tj if y0 >= 0 else 1 - tj)
+                elif mat == "claw":
+                    col = np.array(v["claw"], float) * np.ones(px.shape + (3,))
+                    k = k * (1.35 if face == "top" else 0.85 if face == "bottom" else 1.0)
+                elif mat == "mouth":
+                    col = mix(np.array(v["mouth"]) * 0.75, v["mouth"], tj)
+                elif mat == "tongue":
+                    col = np.array(v["tongue"], float) * np.ones(px.shape + (3,))
+                    k = k * (1 - 0.2 * np.exp(-(((ti - 0.5) / 0.06) ** 2)))
+                elif mat == "nostril":
+                    col = np.array(v["nostril"], float) * np.ones(px.shape + (3,))
+                else:
+                    raise ValueError(mat)
+                col = col * np.asarray(k)[..., None] + rng.normal(0, 1.2, col.shape)
+                img[V0:V0 + FH, U0:U0 + FW] = col
+                alpha[V0:V0 + FH, U0:U0 + FW] = 255
+                if mat == "eye":
+                    glow[V0:V0 + FH, U0:U0 + FW, :3] = col
+                    glow[V0:V0 + FH, U0:U0 + FW, 3] = 255
+    out = np.dstack([np.clip(img, 0, 255), alpha]).astype(np.uint8)
+    Image.fromarray(out, "RGBA").save(TEXDIR + v["name"] + ".png", optimize=True)
+    Image.fromarray(np.clip(glow, 0, 255).astype(np.uint8), "RGBA").save(TEXDIR + v["name"] + "_eyes.png", optimize=True)
+
+
+def recolor_scale_item(v):
+    """Makes NAME_scale.png from the red scale item by mapping each pixel's brightness onto a gradient."""
+    src = Image.open(ITEMDIR + "red_dragon_scale.png").convert("RGBA")
+    out = Image.new("RGBA", src.size, (0, 0, 0, 0))
+    stops = v["item_gradient"]
+    for yy in range(src.height):
+        for xx in range(src.width):
+            r, g, b, a = src.getpixel((xx, yy))
+            if a == 0:
+                continue
+            lum = 0.3 * r + 0.59 * g + 0.11 * b
+            lo, hi = stops[0], stops[-1]
+            for s0, s1 in zip(stops, stops[1:]):
+                if lum <= s1[0]:
+                    lo, hi = s0, s1
+                    break
+            t = max(0.0, min(1.0, (lum - lo[0]) / (hi[0] - lo[0])))
+            out.putpixel((xx, yy), tuple(int(lo[1][c] + (hi[1][c] - lo[1][c]) * t) for c in range(3)) + (a,))
+    out.save(ITEMDIR + v["name"] + "_scale.png")
+
+
+for variant in VARIANTS:
+    paint_variant(variant)
+    if "item_gradient" in variant:
+        recolor_scale_item(variant)
+
 
 # ---------------- Java ----------------
 def fl(v):
@@ -333,8 +564,9 @@ package com.wildcreatures.client;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
 
-public final class RedDragonLayer {{
-    private RedDragonLayer() {{}}
+/** The winged dragons' shared body. */
+public final class DragonLayer {{
+    private DragonLayer() {{}}
 
     @SuppressWarnings("unused")
     public static LayerDefinition create() {{
@@ -346,4 +578,4 @@ public final class RedDragonLayer {{
 }}
 """
 open(JAVA, "w").write(java)
-print("wrote", JAVA, TEX, GLOW)
+print("wrote", JAVA, "and", ", ".join(v["name"] for v in VARIANTS), "textures")

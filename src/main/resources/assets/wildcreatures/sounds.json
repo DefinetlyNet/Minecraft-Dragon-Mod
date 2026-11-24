@@ -9,5 +9,6 @@
   "red_dragon.bite": {"subtitle": "subtitles.wildcreatures.red_dragon.bite", "sounds": ["wildcreatures:red_dragon/bite"]},
   "red_dragon.breath": {"subtitle": "subtitles.wildcreatures.red_dragon.breath", "sounds": [{"name": "wildcreatures:red_dragon/breath", "attenuation_distance": 32}]},
   "red_dragon.flap": {"subtitle": "subtitles.wildcreatures.red_dragon.flap", "sounds": ["wildcreatures:red_dragon/flap"]},
-  "red_dragon.step": {"subtitle": "subtitles.wildcreatures.red_dragon.step", "sounds": ["wildcreatures:red_dragon/step"]}
+  "red_dragon.step": {"subtitle": "subtitles.wildcreatures.red_dragon.step", "sounds": ["wildcreatures:red_dragon/step"]},
+  "frost_dragon.breath": {"subtitle": "subtitles.wildcreatures.frost_dragon.breath", "sounds": [{"name": "wildcreatures:frost_dragon/breath", "attenuation_distance": 32}]}
 }
