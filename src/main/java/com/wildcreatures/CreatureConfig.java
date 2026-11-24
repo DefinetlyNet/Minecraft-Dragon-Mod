@@ -15,7 +15,8 @@ public final class CreatureConfig {
             DRAGON_SMALL_CHANCE, DRAGON_GIANT_CHANCE;
     public static final ForgeConfigSpec.DoubleValue DRAGON_SMALL_HEALTH, DRAGON_GIANT_HEALTH,
             ESSENCE_CHANCE, ESSENCE_CHANCE_SMALL, ESSENCE_CHANCE_GIANT;
-    public static final ForgeConfigSpec.IntValue SWORD_BURN_SECONDS, SHIELD_BURN_SECONDS;
+    public static final ForgeConfigSpec.IntValue SWORD_BURN_SECONDS, SHIELD_BURN_SECONDS, ARMOR_FIRE_PIECES;
+    public static final ForgeConfigSpec.BooleanValue SWORD_COOKS_DROPS, ARMOR_BLOCKS_DRAGON_BREATH;
     public static final ForgeConfigSpec.BooleanValue DRAGON_CAN_FLY, DRAGON_BURNS_BLOCKS;
 
     static {
@@ -50,6 +51,12 @@ public final class CreatureConfig {
         b.comment("Dragon gear").push("dragon_gear");
         SWORD_BURN_SECONDS = b.comment("Seconds a creature burns after being hit by the Dragon Sword (0 = no fire)").defineInRange("swordBurnSeconds", 4, 0, 60);
         SHIELD_BURN_SECONDS = b.comment("Seconds a creature burns after hitting a player who is blocking with the Dragon Shield (0 = no fire)").defineInRange("shieldBurnSeconds", 5, 0, 60);
+        SWORD_COOKS_DROPS = b.comment("Animals killed with the Dragon Sword drop cooked meat").define("swordCooksDrops", true);
+        b.pop();
+        b.comment("Dragon Scale armor").push("dragon_armor");
+        ARMOR_FIRE_PIECES = b.comment("How many Dragon Scale armor pieces you need on to be immune to fire and lava (4 = full set, 0 = never)")
+                .defineInRange("fireImmunityPieces", 4, 0, 4);
+        ARMOR_BLOCKS_DRAGON_BREATH = b.comment("Whether that fire immunity also blocks the Red Dragon's fire breath damage").define("blocksDragonBreath", true);
         b.pop();
         b.comment("World generation. Changes only affect newly generated land.").push("world");
         ASHEN_WASTES_WEIGHT = b.comment("How common the Ashen Wastes biome is. Higher = more common, 0 = turned off. Needs a game restart.")

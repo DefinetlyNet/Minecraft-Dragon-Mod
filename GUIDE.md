@@ -1,7 +1,7 @@
-# Wild Creatures 1.7.0 (Forge 1.20.1)
+# Wild Creatures 1.8.0 (Forge 1.20.1)
 
 A creature mod that can keep growing. The first creature is the **Red Dragon**.
-Install: put `wildcreatures-1.7.0.jar` in your `mods` folder (Forge 47 for Minecraft 1.20.1), plus TerraBlender (see the Ashen Wastes section).
+Install: put `wildcreatures-1.8.0.jar` in your `mods` folder (Forge 47 for Minecraft 1.20.1), plus TerraBlender (see the Ashen Wastes section).
 
 ## Red Dragon
 - Big and hostile: about 11 blocks from nose to tail and about 4 to 5 blocks tall, covered in overlapping scales.
@@ -80,3 +80,11 @@ The tools look like the vanilla diamond tools recoloured dragon red, with small 
 Change the numbers in `config/wildcreatures-common.toml`: `dropChancePercent`, `smallDropChancePercent` and `giantDropChancePercent` under `[dragon_essence]`, and `swordBurnSeconds` and `shieldBurnSeconds` under `[dragon_gear]` (0 turns the fire off). The nest chance is in `data/wildcreatures/loot_tables/chests/dragon_nest.json` (the last pool: weight 1 essence against weight 59 empty).
 
 The textures are made by `tools/make_dragon_gear.py`; the shield's 3D shape is in `client/DragonShieldRenderer.java`.
+
+## Fire-proof dragon armor and cooked drops (v1.8.0)
+
+- **Dragon Scale armor:** wearing all four pieces makes you immune to fire. You never catch fire, and lava, fire, magma blocks and fireballs do no damage, so you can swim in lava. This also blocks the Red Dragon's fire breath (its bite still hurts). With fewer than four pieces on, you burn like normal. Lava still slows you down and is hard to see through.
+- **Fix:** the dragon's fire breath now counts as fire damage. Before, Fire Resistance potions and Fire Protection didn't help against it, even though this guide said they did. Now they do.
+- **Dragon Sword:** animals you kill with it drop their meat already cooked (steak, cooked porkchop, chicken, mutton, rabbit and fish). Animals that burn to death after a hit drop cooked meat too.
+
+Config (`config/wildcreatures-common.toml`): `fireImmunityPieces` (4 = full set; set it lower to need fewer pieces, 0 = off) and `blocksDragonBreath` (false = the dragon's breath still hurts) under `[dragon_armor]`, and `swordCooksDrops` under `[dragon_gear]`.
