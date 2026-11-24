@@ -1,0 +1,13 @@
+{
+  "red_dragon.roar": {"subtitle": "subtitles.wildcreatures.red_dragon.roar", "sounds": [
+    {"name": "wildcreatures:red_dragon/roar1", "attenuation_distance": 48},
+    {"name": "wildcreatures:red_dragon/roar2", "attenuation_distance": 48},
+    {"name": "wildcreatures:red_dragon/growl1", "attenuation_distance": 24},
+    {"name": "wildcreatures:red_dragon/growl2", "attenuation_distance": 24}]},
+  "red_dragon.hurt": {"subtitle": "subtitles.wildcreatures.red_dragon.hurt", "sounds": ["wildcreatures:red_dragon/hurt1", "wildcreatures:red_dragon/hurt2"]},
+  "red_dragon.death": {"subtitle": "subtitles.wildcreatures.red_dragon.death", "sounds": [{"name": "wildcreatures:red_dragon/death", "attenuation_distance": 64}]},
+  "red_dragon.bite": {"subtitle": "subtitles.wildcreatures.red_dragon.bite", "sounds": ["wildcreatures:red_dragon/bite"]},
+  "red_dragon.breath": {"subtitle": "subtitles.wildcreatures.red_dragon.breath", "sounds": [{"name": "wildcreatures:red_dragon/breath", "attenuation_distance": 32}]},
+  "red_dragon.flap": {"subtitle": "subtitles.wildcreatures.red_dragon.flap", "sounds": ["wildcreatures:red_dragon/flap"]},
+  "red_dragon.step": {"subtitle": "subtitles.wildcreatures.red_dragon.step", "sounds": ["wildcreatures:red_dragon/step"]}
+}

@@ -1,0 +1,20 @@
+{
+  "itemGroup.wildcreatures.creatures": "Wild Creatures",
+  "entity.wildcreatures.red_dragon": "Red Dragon",
+  "item.wildcreatures.red_dragon_spawn_egg": "Red Dragon Spawn Egg",
+  "item.wildcreatures.red_dragon_scale": "Red Dragon Scale",
+  "death.attack.wildcreatures.dragonFire": "%1$s was burnt to a crisp by %2$s",
+  "death.attack.wildcreatures.dragonFire.item": "%1$s was burnt to a crisp by %2$s",
+  "death.attack.wildcreatures.dragonFire.player": "%1$s was burnt to a crisp by %2$s while fighting %3$s",
+  "item.wildcreatures.dragon_scale_helmet": "Dragon Scale Helmet",
+  "item.wildcreatures.dragon_scale_chestplate": "Dragon Scale Chestplate",
+  "item.wildcreatures.dragon_scale_leggings": "Dragon Scale Leggings",
+  "item.wildcreatures.dragon_scale_boots": "Dragon Scale Boots",
+  "subtitles.wildcreatures.red_dragon.roar": "Red Dragon roars",
+  "subtitles.wildcreatures.red_dragon.hurt": "Red Dragon hurts",
+  "subtitles.wildcreatures.red_dragon.death": "Red Dragon dies",
+  "subtitles.wildcreatures.red_dragon.bite": "Red Dragon bites",
+  "subtitles.wildcreatures.red_dragon.breath": "Red Dragon breathes fire",
+  "subtitles.wildcreatures.red_dragon.flap": "Wings flap",
+  "subtitles.wildcreatures.red_dragon.step": "Heavy footsteps"
+}
