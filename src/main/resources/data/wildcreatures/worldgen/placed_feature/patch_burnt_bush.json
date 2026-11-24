@@ -1,5 +1,5 @@
 {
-  "feature": "minecraft:patch_dead_bush",
+  "feature": "wildcreatures:patch_burnt_bush",
   "placement": [
     {
       "type": "minecraft:count",

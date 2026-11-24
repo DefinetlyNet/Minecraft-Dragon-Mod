@@ -122,7 +122,7 @@
     [
       "minecraft:glow_lichen",
       "wildcreatures:burnt_tree",
-      "wildcreatures:dead_bush_ash"
+      "wildcreatures:patch_burnt_bush"
     ],
     [
       "minecraft:freeze_top_layer"

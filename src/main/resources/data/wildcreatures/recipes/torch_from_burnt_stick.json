@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "X",
+    "#"
+  ],
+  "key": {
+    "X": [
+      {
+        "item": "minecraft:coal"
+      },
+      {
+        "item": "minecraft:charcoal"
+      }
+    ],
+    "#": {
+      "item": "wildcreatures:burnt_stick"
+    }
+  },
+  "result": {
+    "item": "minecraft:torch",
+    "count": 4
+  }
+}

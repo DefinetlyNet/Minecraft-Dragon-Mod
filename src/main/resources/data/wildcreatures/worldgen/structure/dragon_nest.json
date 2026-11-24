@@ -1,0 +1,7 @@
+{
+  "type": "wildcreatures:dragon_nest",
+  "biomes": "#wildcreatures:has_dragon_nest",
+  "step": "surface_structures",
+  "spawn_overrides": {},
+  "terrain_adaptation": "none"
+}

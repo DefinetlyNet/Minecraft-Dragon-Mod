@@ -11,13 +11,19 @@ public final class CreatureConfig {
     public static final ForgeConfigSpec.DoubleValue DRAGON_HEALTH, DRAGON_ARMOR, DRAGON_BITE_DAMAGE, DRAGON_BREATH_DAMAGE,
             DRAGON_BREATH_RANGE, DRAGON_FIRE_RADIUS, DRAGON_FLY_SPEED;
     public static final ForgeConfigSpec.IntValue DRAGON_BITE_COOLDOWN, DRAGON_BREATH_TICKS, DRAGON_BREATH_COOLDOWN,
-            DRAGON_BURN_SECONDS, DRAGON_SPAWN_CHANCE, ASHEN_WASTES_WEIGHT;
+            DRAGON_BURN_SECONDS, DRAGON_SPAWN_CHANCE, ASHEN_WASTES_WEIGHT,
+            DRAGON_SMALL_CHANCE, DRAGON_GIANT_CHANCE;
+    public static final ForgeConfigSpec.DoubleValue DRAGON_SMALL_HEALTH, DRAGON_GIANT_HEALTH;
     public static final ForgeConfigSpec.BooleanValue DRAGON_CAN_FLY, DRAGON_BURNS_BLOCKS;
 
     static {
         ForgeConfigSpec.Builder b = new ForgeConfigSpec.Builder();
         b.comment("Red Dragon. Health and damage are in half-hearts (20 = a full player health bar).").push("red_dragon");
-        DRAGON_HEALTH = b.comment("Max health").defineInRange("health", 200.0, 1.0, 2048.0);
+        DRAGON_HEALTH = b.comment("Max health of a normal-size dragon").defineInRange("health", 200.0, 1.0, 2048.0);
+        DRAGON_SMALL_CHANCE = b.comment("Percent chance a new dragon is a small one (smaller, weaker, less health)").defineInRange("smallChancePercent", 30, 0, 100);
+        DRAGON_SMALL_HEALTH = b.comment("Max health of a small dragon").defineInRange("smallHealth", 120.0, 1.0, 2048.0);
+        DRAGON_GIANT_CHANCE = b.comment("Percent chance a new dragon is a giant (1.5x bigger, hits harder, drops extra scales)").defineInRange("giantChancePercent", 3, 0, 100);
+        DRAGON_GIANT_HEALTH = b.comment("Max health of a giant dragon").defineInRange("giantHealth", 400.0, 1.0, 2048.0);
         DRAGON_ARMOR = b.comment("Armor points (a full diamond suit is 20)").defineInRange("armor", 10.0, 0.0, 30.0);
         DRAGON_BITE_DAMAGE = b.comment("Damage of one bite").defineInRange("biteDamage", 16.0, 0.0, 1000.0);
         DRAGON_BITE_COOLDOWN = b.comment("Ticks between bites (20 ticks = 1 second)").defineInRange("biteCooldownTicks", 30, 5, 400);

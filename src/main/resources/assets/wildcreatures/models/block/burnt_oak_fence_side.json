@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/fence_side",
+  "textures": {
+    "texture": "wildcreatures:block/burnt_oak_planks"
+  }
+}

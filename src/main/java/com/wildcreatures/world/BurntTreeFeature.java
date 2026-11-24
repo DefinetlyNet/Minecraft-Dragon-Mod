@@ -33,6 +33,12 @@ public class BurntTreeFeature extends Feature<NoneFeatureConfiguration> {
         BlockState ground = level.getBlockState(origin.below());
         if (!ground.is(BlockTags.DIRT) && !ground.is(BlockTags.BASE_STONE_OVERWORLD)) return false;
 
+        // keep clear of dragon nests (they are built before trees grow; their floor has coarse dirt,
+        // which the Ashen Wastes ground never has)
+        for (BlockPos near : BlockPos.betweenClosed(origin.offset(-9, -2, -9), origin.offset(9, 0, 9))) {
+            if (level.getBlockState(near).is(net.minecraft.world.level.block.Blocks.COARSE_DIRT)) return false;
+        }
+
         int height = 9 + r.nextInt(7);                       // an oak is 4-6 tall; these are 9-15
         for (int y = 0; y <= height; y++) if (!TreeFeature.validTreePos(level, origin.above(y))) return false;
 

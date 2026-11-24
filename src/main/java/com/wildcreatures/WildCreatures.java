@@ -42,13 +42,16 @@ public class WildCreatures {
                 out.accept(ModItems.DRAGON_SCALE_CHESTPLATE.get());
                 out.accept(ModItems.DRAGON_SCALE_LEGGINGS.get());
                 out.accept(ModItems.DRAGON_SCALE_BOOTS.get());
-                ModBlocks.BLOCKS.getEntries().forEach(b -> out.accept(b.get()));
+                ModItems.ITEMS.getEntries().stream().map(i -> i.get())
+                        .filter(i -> i instanceof net.minecraft.world.item.BlockItem || i == ModItems.BURNT_STICK.get())
+                        .forEach(out::accept);
             })
             .build());
 
     public WildCreatures() {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
         ModBlocks.BLOCKS.register(modBus);
+        ModBlockEntities.BLOCK_ENTITIES.register(modBus);
         ModEntities.ENTITIES.register(modBus);
         ModItems.ITEMS.register(modBus);
         ModWorldgen.FEATURES.register(modBus);
@@ -82,8 +85,23 @@ public class WildCreatures {
             event.accept(ModBlocks.BURNT_OAK_PLANKS);
             event.accept(ModBlocks.BURNT_OAK_STAIRS);
             event.accept(ModBlocks.BURNT_OAK_SLAB);
+            event.accept(ModBlocks.BURNT_OAK_FENCE);
+            event.accept(ModBlocks.BURNT_OAK_FENCE_GATE);
+            event.accept(ModItems.BURNT_OAK_DOOR);
+            event.accept(ModBlocks.BURNT_OAK_TRAPDOOR);
+            event.accept(ModBlocks.BURNT_OAK_PRESSURE_PLATE);
+            event.accept(ModBlocks.BURNT_OAK_BUTTON);
         }
-        if (event.getTabKey() == CreativeModeTabs.NATURAL_BLOCKS) event.accept(ModBlocks.ASHEN_SOIL);
+        if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
+            event.accept(ModItems.BURNT_OAK_SIGN);
+            event.accept(ModItems.BURNT_OAK_HANGING_SIGN);
+        }
+        if (event.getTabKey() == CreativeModeTabs.NATURAL_BLOCKS) {
+            event.accept(ModBlocks.ASHEN_SOIL);
+            event.accept(ModBlocks.BURNT_OAK_SAPLING);
+            event.accept(ModBlocks.BURNT_BUSH);
+        }
+        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) event.accept(ModItems.BURNT_STICK);
         if (event.getTabKey() == CreativeModeTabs.COMBAT) {
             event.accept(ModItems.DRAGON_SCALE_HELMET);
             event.accept(ModItems.DRAGON_SCALE_CHESTPLATE);

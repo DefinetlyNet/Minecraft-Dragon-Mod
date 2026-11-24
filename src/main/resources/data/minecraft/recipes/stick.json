@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "sticks",
+  "key": {
+    "#": {
+      "type": "forge:difference",
+      "base": {
+        "tag": "minecraft:planks"
+      },
+      "subtracted": {
+        "item": "wildcreatures:burnt_oak_planks"
+      }
+    }
+  },
+  "pattern": [
+    "#",
+    "#"
+  ],
+  "result": {
+    "count": 4,
+    "item": "minecraft:stick"
+  },
+  "show_notification": true
+}

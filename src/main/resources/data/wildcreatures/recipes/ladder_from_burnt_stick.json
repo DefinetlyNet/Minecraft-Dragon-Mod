@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "# #",
+    "###",
+    "# #"
+  ],
+  "key": {
+    "#": {
+      "item": "wildcreatures:burnt_stick"
+    }
+  },
+  "result": {
+    "item": "minecraft:ladder",
+    "count": 3
+  }
+}

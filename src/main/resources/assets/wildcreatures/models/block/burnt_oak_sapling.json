@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cross",
+  "textures": {
+    "cross": "wildcreatures:block/burnt_oak_sapling"
+  },
+  "render_type": "minecraft:cutout"
+}

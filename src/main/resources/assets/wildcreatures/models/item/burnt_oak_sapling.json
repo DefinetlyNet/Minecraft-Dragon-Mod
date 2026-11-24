@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "wildcreatures:block/burnt_oak_sapling"
+  }
+}

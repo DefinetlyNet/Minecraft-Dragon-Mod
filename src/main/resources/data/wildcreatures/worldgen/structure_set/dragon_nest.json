@@ -1,0 +1,18 @@
+{
+  "structures": [
+    {
+      "structure": "wildcreatures:dragon_nest",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 10,
+    "separation": 4,
+    "salt": 81726354,
+    "exclusion_zone": {
+      "other_set": "wildcreatures:volcano",
+      "chunk_count": 3
+    }
+  }
+}

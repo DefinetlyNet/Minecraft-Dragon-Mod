@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/template_fence_gate",
+  "textures": {
+    "texture": "wildcreatures:block/burnt_oak_planks"
+  }
+}

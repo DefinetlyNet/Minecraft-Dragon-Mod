@@ -7,6 +7,16 @@
     "wildcreatures:stripped_burnt_oak_wood",
     "wildcreatures:burnt_oak_planks",
     "wildcreatures:burnt_oak_stairs",
-    "wildcreatures:burnt_oak_slab"
+    "wildcreatures:burnt_oak_slab",
+    "wildcreatures:burnt_oak_fence",
+    "wildcreatures:burnt_oak_fence_gate",
+    "wildcreatures:burnt_oak_door",
+    "wildcreatures:burnt_oak_trapdoor",
+    "wildcreatures:burnt_oak_button",
+    "wildcreatures:burnt_oak_pressure_plate",
+    "wildcreatures:burnt_oak_sign",
+    "wildcreatures:burnt_oak_wall_sign",
+    "wildcreatures:burnt_oak_hanging_sign",
+    "wildcreatures:burnt_oak_wall_hanging_sign"
   ]
 }

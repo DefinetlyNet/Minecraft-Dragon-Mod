@@ -25,5 +25,18 @@
   "block.wildcreatures.stripped_burnt_oak_wood": "Stripped Burnt Oak Wood",
   "block.wildcreatures.burnt_oak_planks": "Burnt Oak Planks",
   "block.wildcreatures.burnt_oak_stairs": "Burnt Oak Stairs",
-  "block.wildcreatures.burnt_oak_slab": "Burnt Oak Slab"
+  "block.wildcreatures.burnt_oak_slab": "Burnt Oak Slab",
+  "block.wildcreatures.burnt_oak_fence": "Burnt Oak Fence",
+  "block.wildcreatures.burnt_oak_fence_gate": "Burnt Oak Fence Gate",
+  "block.wildcreatures.burnt_oak_door": "Burnt Oak Door",
+  "block.wildcreatures.burnt_oak_trapdoor": "Burnt Oak Trapdoor",
+  "block.wildcreatures.burnt_oak_button": "Burnt Oak Button",
+  "block.wildcreatures.burnt_oak_pressure_plate": "Burnt Oak Pressure Plate",
+  "block.wildcreatures.burnt_oak_sign": "Burnt Oak Sign",
+  "block.wildcreatures.burnt_oak_wall_sign": "Burnt Oak Sign",
+  "block.wildcreatures.burnt_oak_hanging_sign": "Burnt Oak Hanging Sign",
+  "block.wildcreatures.burnt_oak_wall_hanging_sign": "Burnt Oak Hanging Sign",
+  "block.wildcreatures.burnt_oak_sapling": "Burnt Oak Sapling",
+  "block.wildcreatures.burnt_bush": "Burnt Bush",
+  "item.wildcreatures.burnt_stick": "Burnt Stick"
 }

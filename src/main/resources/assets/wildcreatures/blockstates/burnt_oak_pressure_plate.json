@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "powered=false": {
+      "model": "wildcreatures:block/burnt_oak_pressure_plate"
+    },
+    "powered=true": {
+      "model": "wildcreatures:block/burnt_oak_pressure_plate_down"
+    }
+  }
+}

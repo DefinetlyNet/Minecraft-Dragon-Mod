@@ -46,3 +46,12 @@ The biome only appears in **newly generated land**. Make a new world, or travel 
 Finding it: `/locate biome wildcreatures:ashen_wastes` and `/locate structure wildcreatures:volcano`.
 
 How common the biome is: `ashenWastesWeight` in `config/wildcreatures-common.toml` (default 10; higher = more common, 0 = off).
+
+## Burnt oak set, burnt sticks, nests and dragon sizes (v1.6.0)
+
+- **Burnt oak crafting:** logs make planks; planks make stairs, slabs, fences, fence gates, doors, trapdoors, buttons, pressure plates, signs and hanging signs. Burnt planks also work anywhere normal planks do (crafting table, chest, barrel and so on).
+- **Burnt sticks:** two burnt oak planks make 4 burnt sticks (not normal sticks). They're used for burnt oak fences, gates and signs, and they also make torches and ladders. Tools still need normal sticks.
+- **Burnt bushes:** small charred bushes all over the Ashen Wastes. Breaking one gives 0 to 2 burnt sticks and about a 1 in 6 chance of a burnt oak sapling (better with Fortune). Shears pick up the bush itself.
+- **Burnt oak saplings:** plant them on ashen soil, dirt or grass. They grow into the big dead burnt oak trees (bone meal works).
+- **Dragon nests:** a ring of burnt wood about 15 blocks across with bones and a chest in the middle. They appear now and then in every biome the Red Dragon lives in (right now the Ashen Wastes; add more biomes in `data/wildcreatures/tags/worldgen/biome/red_dragon_habitat.json`). The chest can hold burnt oak logs, dragon scales, burnt sticks and saplings, bones, iron and gold, and iron tools and armor (sometimes enchanted). There's also a small chance of diamonds or a golden apple. Find one with `/locate structure wildcreatures:dragon_nest`.
+- **Dragon sizes:** each dragon rolls a size when it spawns. Small (70% size, 120 health, weaker hits) 30% of the time. Normal (200 health) most of the time. Giant (150% size, 400 health, harder hits, longer and wider fire breath, drops extra scales) 3% of the time. Change these in the config (`smallChancePercent`, `smallHealth`, `giantChancePercent`, `giantHealth`). To summon a specific size: `/summon wildcreatures:red_dragon ~ ~ ~ {DragonSize:"giant"}` (or "small", "normal").

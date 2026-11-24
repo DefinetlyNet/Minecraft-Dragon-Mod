@@ -1,6 +1,7 @@
 package com.wildcreatures.entity;
 
 import com.wildcreatures.CreatureConfig;
+import com.wildcreatures.ModItems;
 import com.wildcreatures.ModSounds;
 import com.wildcreatures.WildCreatures;
 import net.minecraft.core.BlockPos;
@@ -19,6 +20,8 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.DifficultyInstance;
+import javax.annotation.Nullable;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.*;
@@ -61,6 +64,15 @@ public class RedDragon extends Monster {
     private static final EntityDataAccessor<Boolean> FLYING = SynchedEntityData.defineId(RedDragon.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> BREATHING = SynchedEntityData.defineId(RedDragon.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Vector3f> BREATH_TARGET = SynchedEntityData.defineId(RedDragon.class, EntityDataSerializers.VECTOR3);
+    private static final EntityDataAccessor<Float> SIZE = SynchedEntityData.defineId(RedDragon.class, EntityDataSerializers.FLOAT);
+
+    /** Dragon sizes: how big it is drawn, and how its damage is scaled. Health comes from the config. */
+    public enum Size {
+        SMALL(0.7F, 0.75F), NORMAL(1.0F, 1.0F), GIANT(1.5F, 1.4F);
+        public final float scale, damage;
+        Size(float scale, float damage) { this.scale = scale; this.damage = damage; }
+    }
+    private Size size = Size.NORMAL;
 
     private static final byte BITE_EVENT = 4;
     private static final int BITE_ANIM_TICKS = 10;
@@ -119,6 +131,7 @@ public class RedDragon extends Monster {
         entityData.define(FLYING, false);
         entityData.define(BREATHING, false);
         entityData.define(BREATH_TARGET, new Vector3f());
+        entityData.define(SIZE, 1.0F);
     }
 
     @Override
@@ -137,6 +150,54 @@ public class RedDragon extends Monster {
         targetSelector.addGoal(1, new HurtByTargetGoal(this));
         targetSelector.addGoal(2, new SpotTargetGoal<>(Player.class));
         targetSelector.addGoal(3, new SpotTargetGoal<>(AbstractVillager.class));
+    }
+
+    // ------------------------------------------------------------------ size
+
+    /** How big this dragon is compared to a normal one (0.7 small, 1 normal, 1.5 giant). */
+    public float getSizeScale() { return entityData.get(SIZE); }
+
+    public Size getSize() { return size; }
+
+    public void setSize(Size newSize) {
+        size = newSize;
+        entityData.set(SIZE, newSize.scale);
+        double health = switch (newSize) {
+            case SMALL -> CreatureConfig.DRAGON_SMALL_HEALTH.get();
+            case GIANT -> CreatureConfig.DRAGON_GIANT_HEALTH.get();
+            default -> CreatureConfig.DRAGON_HEALTH.get();
+        };
+        getAttribute(Attributes.MAX_HEALTH).setBaseValue(health);
+        getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(CreatureConfig.DRAGON_BITE_DAMAGE.get() * newSize.damage);
+        setHealth(getMaxHealth());
+        xpReward = (int) (60 * health / 200);
+        refreshDimensions();
+    }
+
+    @Override
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason,
+                                        @Nullable SpawnGroupData data, @Nullable CompoundTag tag) {
+        int roll = random.nextInt(100);
+        int giant = CreatureConfig.DRAGON_GIANT_CHANCE.get(), small = CreatureConfig.DRAGON_SMALL_CHANCE.get();
+        setSize(roll < giant ? Size.GIANT : roll < giant + small ? Size.SMALL : Size.NORMAL);
+        return super.finalizeSpawn(level, difficulty, reason, data, tag);
+    }
+
+    @Override
+    public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
+        super.onSyncedDataUpdated(key);
+        if (SIZE.equals(key)) refreshDimensions();
+    }
+
+    @Override
+    public EntityDimensions getDimensions(Pose pose) {
+        return super.getDimensions(pose).scale(getSizeScale());
+    }
+
+    @Override
+    protected void dropCustomDeathLoot(DamageSource source, int looting, boolean hitByPlayer) {
+        super.dropCustomDeathLoot(source, looting, hitByPlayer);
+        if (size == Size.GIANT) spawnAtLocation(new net.minecraft.world.item.ItemStack(ModItems.RED_DRAGON_SCALE.get(), 4 + random.nextInt(4 + looting)));
     }
 
     // ------------------------------------------------------------------ state
@@ -166,7 +227,7 @@ public class RedDragon extends Monster {
 
     /** Where the fire comes out: in front of the body, up at head height, following the head's aim. */
     public Vec3 mouthPos() {
-        double s = MODEL_SCALE / 16.0;
+        double s = MODEL_SCALE * getSizeScale() / 16.0;
         Vec3 bodyFwd = Vec3.directionFromRotation(0, yBodyRot);
         Vec3 headFwd = Vec3.directionFromRotation(getXRot(), yHeadRot);
         return position().add(bodyFwd.scale(32 * s)).add(0, 31 * s, 0).add(headFwd.scale(19 * s));
@@ -179,7 +240,7 @@ public class RedDragon extends Monster {
 
     private boolean canBite(LivingEntity target) {
         double dx = target.getX() - getX(), dz = target.getZ() - getZ();
-        double reach = getBbWidth() / 2 + 4.3 + target.getBbWidth() / 2;
+        double reach = getBbWidth() / 2 + 4.3 * getSizeScale() + target.getBbWidth() / 2;
         double dy = target.getY() - getY();
         return dx * dx + dz * dz <= reach * reach && dy > -3.0 && dy < 4.5 && hasLineOfSight(target);
     }
@@ -322,7 +383,7 @@ public class RedDragon extends Monster {
     private void breathTick(Vec3 aim) {
         Vec3 mouth = mouthPos();
         Vec3 dir = aim.subtract(mouth).normalize();
-        double range = CreatureConfig.DRAGON_BREATH_RANGE.get();
+        double range = CreatureConfig.DRAGON_BREATH_RANGE.get() * Math.max(1.0, getSizeScale());
         Vec3 end = mouth.add(dir.scale(range));
         BlockHitResult hit = level().clip(new ClipContext(mouth, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
         boolean hitBlock = hit.getType() != HitResult.Type.MISS;
@@ -330,10 +391,10 @@ public class RedDragon extends Monster {
         Vec3 impact = hitBlock ? hit.getLocation() : end;
         if (aim.distanceTo(mouth) < impact.distanceTo(mouth)) impact = aim;
         double length = impact.distanceTo(mouth);
-        double fireRadius = CreatureConfig.DRAGON_FIRE_RADIUS.get();
+        double fireRadius = CreatureConfig.DRAGON_FIRE_RADIUS.get() * Math.max(1.0, getSizeScale());
 
         if (breathTicks % 4 == 0) {
-            float damage = CreatureConfig.DRAGON_BREATH_DAMAGE.get().floatValue();
+            float damage = CreatureConfig.DRAGON_BREATH_DAMAGE.get().floatValue() * size.damage;
             int burn = CreatureConfig.DRAGON_BURN_SECONDS.get();
             AABB area = new AABB(mouth, impact).inflate(fireRadius + 2);
             final Vec3 imp = impact;
@@ -541,7 +602,7 @@ public class RedDragon extends Monster {
 
     // ------------------------------------------------------------------ misc
 
-    @Override public float getStandingEyeHeight(Pose pose, EntityDimensions size) { return 2.9F; }
+    @Override public float getStandingEyeHeight(Pose pose, EntityDimensions dims) { return dims.height * (2.9F / 3.1F); }
 
     @Override public int getMaxHeadYRot() { return 60; }
 
@@ -576,12 +637,21 @@ public class RedDragon extends Monster {
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         tag.putBoolean("Flying", isFlying());
+        tag.putString("DragonSize", size.name());
     }
 
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         if (tag.getBoolean("Flying")) setFlying(true);
+        if (tag.contains("DragonSize")) {
+            try {
+                Size saved = Size.valueOf(tag.getString("DragonSize").toUpperCase(java.util.Locale.ROOT));
+                float health = getHealth();
+                setSize(saved);
+                if (tag.contains("Health")) setHealth(Math.min(health, getMaxHealth()));
+            } catch (IllegalArgumentException ignored) {}
+        }
     }
 
     // ------------------------------------------------------------------ for the model

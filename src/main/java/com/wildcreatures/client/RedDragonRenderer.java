@@ -29,7 +29,9 @@ public class RedDragonRenderer extends MobRenderer<RedDragon, RedDragonModel> {
 
     @Override
     protected void scale(RedDragon dragon, PoseStack pose, float partialTick) {
-        pose.scale(RedDragon.MODEL_SCALE, RedDragon.MODEL_SCALE, RedDragon.MODEL_SCALE);
+        float s = RedDragon.MODEL_SCALE * dragon.getSizeScale();
+        pose.scale(s, s, s);
+        shadowRadius = 2.7F * dragon.getSizeScale();
     }
 
     @Override
@@ -39,9 +41,10 @@ public class RedDragonRenderer extends MobRenderer<RedDragon, RedDragonModel> {
         float fly = dragon.getFlyAnim(partialTick);
         if (fly > 0) {
             float climb = (float) Mth.clamp(dragon.getDeltaMovement().y * 40.0, -25.0, 25.0);
-            pose.translate(0, 1.2, 0);
+            double pivot = 1.2 * dragon.getSizeScale();
+            pose.translate(0, pivot, 0);
             pose.mulPose(Axis.XP.rotationDegrees(-climb * fly));
-            pose.translate(0, -1.2, 0);
+            pose.translate(0, -pivot, 0);
         }
     }
 }

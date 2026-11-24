@@ -31,6 +31,9 @@ public final class ModWorldgen {
     public static final RegistryObject<Feature<NoneFeatureConfiguration>> LAVA_POOL = FEATURES.register("lava_pool", LavaPoolFeature::new);
 
     public static final RegistryObject<StructureType<VolcanoStructure>> VOLCANO = STRUCTURE_TYPES.register("volcano", () -> () -> VolcanoStructure.CODEC);
+    public static final RegistryObject<StructureType<DragonNestStructure>> DRAGON_NEST = STRUCTURE_TYPES.register("dragon_nest", () -> () -> DragonNestStructure.CODEC);
+    public static final RegistryObject<StructurePieceType> DRAGON_NEST_PIECE = STRUCTURE_PIECES.register("dragon_nest",
+            () -> (StructurePieceType.ContextlessType) DragonNestPiece::new);
     public static final RegistryObject<StructurePieceType> VOLCANO_PIECE = STRUCTURE_PIECES.register("volcano",
             () -> (StructurePieceType.ContextlessType) VolcanoPiece::new);
 }
