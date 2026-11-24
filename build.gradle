@@ -19,6 +19,8 @@ minecraft {
         configureEach {
             workingDirectory project.file('run')
             property 'forge.logging.console.level', 'debug'
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
             mods { "${mod_id}" { source sourceSets.main } }
         }
         client {
@@ -31,10 +33,13 @@ minecraft {
     }
 }
 
-repositories { }
+repositories {
+    maven { url = 'https://maven.minecraftforge.net/' }   // TerraBlender (adds our biome to the Overworld)
+}
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    implementation fg.deobf("com.github.glitchfiend:TerraBlender-forge:${minecraft_version}-${terrablender_version}")
 }
 
 tasks.named('processResources', ProcessResources).configure {

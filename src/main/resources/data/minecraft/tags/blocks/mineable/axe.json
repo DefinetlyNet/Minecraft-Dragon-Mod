@@ -1,0 +1,12 @@
+{
+  "replace": false,
+  "values": [
+    "wildcreatures:burnt_oak_log",
+    "wildcreatures:burnt_oak_wood",
+    "wildcreatures:stripped_burnt_oak_log",
+    "wildcreatures:stripped_burnt_oak_wood",
+    "wildcreatures:burnt_oak_planks",
+    "wildcreatures:burnt_oak_stairs",
+    "wildcreatures:burnt_oak_slab"
+  ]
+}

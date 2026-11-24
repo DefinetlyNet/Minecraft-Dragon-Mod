@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "wildcreatures:block/ashen_soil"
+      },
+      {
+        "model": "wildcreatures:block/ashen_soil",
+        "y": 90
+      },
+      {
+        "model": "wildcreatures:block/ashen_soil",
+        "y": 180
+      },
+      {
+        "model": "wildcreatures:block/ashen_soil",
+        "y": 270
+      }
+    ]
+  }
+}

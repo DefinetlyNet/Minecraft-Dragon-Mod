@@ -11,7 +11,7 @@ public final class CreatureConfig {
     public static final ForgeConfigSpec.DoubleValue DRAGON_HEALTH, DRAGON_ARMOR, DRAGON_BITE_DAMAGE, DRAGON_BREATH_DAMAGE,
             DRAGON_BREATH_RANGE, DRAGON_FIRE_RADIUS, DRAGON_FLY_SPEED;
     public static final ForgeConfigSpec.IntValue DRAGON_BITE_COOLDOWN, DRAGON_BREATH_TICKS, DRAGON_BREATH_COOLDOWN,
-            DRAGON_BURN_SECONDS, DRAGON_SPAWN_CHANCE;
+            DRAGON_BURN_SECONDS, DRAGON_SPAWN_CHANCE, ASHEN_WASTES_WEIGHT;
     public static final ForgeConfigSpec.BooleanValue DRAGON_CAN_FLY, DRAGON_BURNS_BLOCKS;
 
     static {
@@ -31,8 +31,12 @@ public final class CreatureConfig {
         DRAGON_BURNS_BLOCKS = b.comment("Whether the breath sets blocks on fire (also needs the mobGriefing game rule on)").define("breathSetsBlocksOnFire", true);
         DRAGON_CAN_FLY = b.comment("Whether the dragon can take off and fly").define("canFly", true);
         DRAGON_FLY_SPEED = b.comment("Top flying speed in blocks per tick (a sprinting player is about 0.28)").defineInRange("flySpeed", 0.45, 0.05, 2.0);
-        DRAGON_SPAWN_CHANCE = b.comment("Natural spawns in mountains and badlands only succeed 1 time in this many tries. Higher = rarer. 0 = never spawn naturally.")
+        DRAGON_SPAWN_CHANCE = b.comment("Natural spawns (in the Ashen Wastes) only succeed 1 time in this many tries. Higher = rarer. 0 = never spawn naturally.")
                 .defineInRange("spawnRarity", 4, 0, 10000);
+        b.pop();
+        b.comment("World generation. Changes only affect newly generated land.").push("world");
+        ASHEN_WASTES_WEIGHT = b.comment("How common the Ashen Wastes biome is. Higher = more common, 0 = turned off. Needs a game restart.")
+                .defineInRange("ashenWastesWeight", 10, 0, 50);
         b.pop();
         SPEC = b.build();
     }

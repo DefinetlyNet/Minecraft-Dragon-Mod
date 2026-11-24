@@ -1,6 +1,13 @@
 package com.wildcreatures;
 
+import com.wildcreatures.world.AshenRegion;
+import com.wildcreatures.world.AshenSurface;
+import com.wildcreatures.world.ModWorldgen;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import terrablender.api.Regions;
+import terrablender.api.SurfaceRuleManager;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
@@ -35,13 +42,19 @@ public class WildCreatures {
                 out.accept(ModItems.DRAGON_SCALE_CHESTPLATE.get());
                 out.accept(ModItems.DRAGON_SCALE_LEGGINGS.get());
                 out.accept(ModItems.DRAGON_SCALE_BOOTS.get());
+                ModBlocks.BLOCKS.getEntries().forEach(b -> out.accept(b.get()));
             })
             .build());
 
     public WildCreatures() {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
+        ModBlocks.BLOCKS.register(modBus);
         ModEntities.ENTITIES.register(modBus);
         ModItems.ITEMS.register(modBus);
+        ModWorldgen.FEATURES.register(modBus);
+        ModWorldgen.STRUCTURE_TYPES.register(modBus);
+        ModWorldgen.STRUCTURE_PIECES.register(modBus);
+        modBus.addListener(this::commonSetup);
         ModSounds.SOUNDS.register(modBus);
         TABS.register(modBus);
         modBus.addListener(this::addToVanillaTabs);
@@ -49,9 +62,28 @@ public class WildCreatures {
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CreatureConfig.SPEC, MOD_ID + "-common.toml");
     }
 
+    private void commonSetup(FMLCommonSetupEvent event) {
+        event.enqueueWork(() -> {
+            // Ashen Wastes: our share of the Overworld (TerraBlender region) and its ground rules
+            int weight = CreatureConfig.ASHEN_WASTES_WEIGHT.get();
+            if (weight > 0) Regions.register(new AshenRegion(new ResourceLocation(MOD_ID, "overworld"), weight));
+            SurfaceRuleManager.addSurfaceRules(SurfaceRuleManager.RuleCategory.OVERWORLD, MOD_ID, AshenSurface.rules());
+        });
+    }
+
     private void addToVanillaTabs(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) event.accept(ModItems.RED_DRAGON_SPAWN_EGG);
         if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) event.accept(ModItems.RED_DRAGON_SCALE);
+        if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS) {
+            event.accept(ModBlocks.BURNT_OAK_LOG);
+            event.accept(ModBlocks.BURNT_OAK_WOOD);
+            event.accept(ModBlocks.STRIPPED_BURNT_OAK_LOG);
+            event.accept(ModBlocks.STRIPPED_BURNT_OAK_WOOD);
+            event.accept(ModBlocks.BURNT_OAK_PLANKS);
+            event.accept(ModBlocks.BURNT_OAK_STAIRS);
+            event.accept(ModBlocks.BURNT_OAK_SLAB);
+        }
+        if (event.getTabKey() == CreativeModeTabs.NATURAL_BLOCKS) event.accept(ModBlocks.ASHEN_SOIL);
         if (event.getTabKey() == CreativeModeTabs.COMBAT) {
             event.accept(ModItems.DRAGON_SCALE_HELMET);
             event.accept(ModItems.DRAGON_SCALE_CHESTPLATE);

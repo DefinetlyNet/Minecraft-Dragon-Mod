@@ -16,5 +16,14 @@
   "subtitles.wildcreatures.red_dragon.bite": "Red Dragon bites",
   "subtitles.wildcreatures.red_dragon.breath": "Red Dragon breathes fire",
   "subtitles.wildcreatures.red_dragon.flap": "Wings flap",
-  "subtitles.wildcreatures.red_dragon.step": "Heavy footsteps"
+  "subtitles.wildcreatures.red_dragon.step": "Heavy footsteps",
+  "biome.wildcreatures.ashen_wastes": "Ashen Wastes",
+  "block.wildcreatures.ashen_soil": "Ashen Soil",
+  "block.wildcreatures.burnt_oak_log": "Burnt Oak Log",
+  "block.wildcreatures.burnt_oak_wood": "Burnt Oak Wood",
+  "block.wildcreatures.stripped_burnt_oak_log": "Stripped Burnt Oak Log",
+  "block.wildcreatures.stripped_burnt_oak_wood": "Stripped Burnt Oak Wood",
+  "block.wildcreatures.burnt_oak_planks": "Burnt Oak Planks",
+  "block.wildcreatures.burnt_oak_stairs": "Burnt Oak Stairs",
+  "block.wildcreatures.burnt_oak_slab": "Burnt Oak Slab"
 }

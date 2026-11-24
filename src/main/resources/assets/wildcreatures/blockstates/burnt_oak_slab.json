@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "wildcreatures:block/burnt_oak_slab"
+    },
+    "type=top": {
+      "model": "wildcreatures:block/burnt_oak_slab_top"
+    },
+    "type=double": {
+      "model": "wildcreatures:block/burnt_oak_planks"
+    }
+  }
+}

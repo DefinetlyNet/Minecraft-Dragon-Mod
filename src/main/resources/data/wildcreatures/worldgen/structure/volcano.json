@@ -1,0 +1,7 @@
+{
+  "type": "wildcreatures:volcano",
+  "biomes": "#wildcreatures:has_volcano",
+  "step": "surface_structures",
+  "spawn_overrides": {},
+  "terrain_adaptation": "none"
+}

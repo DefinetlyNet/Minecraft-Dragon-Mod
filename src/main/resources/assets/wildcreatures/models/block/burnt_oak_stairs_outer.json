@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/outer_stairs",
+  "textures": {
+    "bottom": "wildcreatures:block/burnt_oak_planks",
+    "side": "wildcreatures:block/burnt_oak_planks",
+    "top": "wildcreatures:block/burnt_oak_planks"
+  }
+}
