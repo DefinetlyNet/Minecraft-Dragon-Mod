@@ -197,30 +197,72 @@ def frost_breath():
     return x * whoosh * envelope(n, 0.08, 0.6)
 
 
-# python3 tools/make_sounds.py          -> every sound
-# python3 tools/make_sounds.py frost    -> only the Frost Dragon's
-which = sys.argv[1:] or ["red", "frost"]
+def electric_crackle(n, count, lo=1500, hi=9000):
+    """Sharp random electric pops and zaps."""
+    x = np.zeros(n)
+    for _ in range(count):
+        i0 = int(rng.uniform(0, n / SR - 0.03) * SR)
+        seg = np.arange(min(int(rng.uniform(0.004, 0.03) * SR), n - i0))
+        x[i0:i0 + len(seg)] += rng.standard_normal(len(seg)) * np.exp(-seg / (0.004 * SR)) * rng.uniform(0.3, 1.0)
+    return bandpass(x, lo, hi) * 3
+
+
+def buzz(t, f0, wobble=0.0):
+    """A harsh mains-like electric hum: a stack of odd and even harmonics."""
+    f = f0 * (1 + wobble * smooth_noise(len(t), 8))
+    ph = 2 * np.pi * np.cumsum(f) / SR
+    return sum(np.sin(k * ph) / k ** 0.8 for k in range(1, 14))
+
+
+def lightning_call():
+    """The Lightning Dragon calling a storm: a rising electric buzz and crackle under a deep roar."""
+    dur = 2.3
+    t = t_axis(dur)
+    n = len(t)
+    charge = np.clip(t / (dur * 0.8), 0, 1) ** 1.5                 # the charge builds up
+    hum = buzz(t, 55 + 70 * charge, wobble=0.04) * (0.12 + 0.3 * charge)
+    hum = bandpass(hum, 60, 4000)
+    crackle = electric_crackle(n, 260) * (0.25 + 0.9 * charge)
+    fizz = bandpass(rng.standard_normal(n), 3000, 11000) * (0.05 + 0.25 * charge) * (0.6 + 0.4 * smooth_noise(n, 30))
+    voice = roar(dur, 74, rise=0.4, fall=0.3, growl_hz=29, breath=0.5, attack=0.25, release=0.6) * 0.8
+    return (hum + crackle + fizz + voice) * envelope(n, 0.05, 0.25)
+
+
+def lightning_spark():
+    """Sparks crackling on the ground where the strike is about to land."""
+    dur = 0.75
+    t = t_axis(dur)
+    n = len(t)
+    zap = buzz(t, 118, wobble=0.08) * 0.25 * np.exp(-t / 0.35)
+    zap = bandpass(zap, 100, 5000)
+    crackle = electric_crackle(n, 70, 2000, 10000)
+    return (zap + crackle) * envelope(n, 0.01, 0.2)
+
+
+# python3 tools/make_sounds.py              -> every sound
+# python3 tools/make_sounds.py frost        -> only the Frost Dragon's (same for red, lightning)
+which = sys.argv[1:] or ["red", "frost", "lightning"]
+if "red" in which:
+    os.makedirs(OUT, exist_ok=True)
+    save("roar1", roar(2.6, 78))
+    save("roar2", roar(2.1, 92, rise=0.5, fall=0.6, growl_hz=31))
+    save("growl1", growl(1.6, 52))
+    save("growl2", growl(1.2, 60))
+    save("hurt1", hurt(0.6, 150))
+    save("hurt2", hurt(0.75, 125))
+    save("death", death(4.2))
+    save("bite", bite())
+    save("breath", breath())
+    save("flap", flap())
+    save("step", step(), peak=0.8)
 if "frost" in which:
     FROST_OUT = "src/main/resources/assets/wildcreatures/sounds/frost_dragon"
     os.makedirs(FROST_OUT, exist_ok=True)
-    frost_rng = np.random.default_rng(23)
-if "red" not in which:
-    rng = frost_rng
+    rng = np.random.default_rng(23)
     save("breath", frost_breath(), out=FROST_OUT)
-    sys.exit()
-
-os.makedirs(OUT, exist_ok=True)
-save("roar1", roar(2.6, 78))
-save("roar2", roar(2.1, 92, rise=0.5, fall=0.6, growl_hz=31))
-save("growl1", growl(1.6, 52))
-save("growl2", growl(1.2, 60))
-save("hurt1", hurt(0.6, 150))
-save("hurt2", hurt(0.75, 125))
-save("death", death(4.2))
-save("bite", bite())
-save("breath", breath())
-save("flap", flap())
-save("step", step(), peak=0.8)
-if "frost" in which:
-    rng = frost_rng
-    save("breath", frost_breath(), out=FROST_OUT)
+if "lightning" in which:
+    LIGHTNING_OUT = "src/main/resources/assets/wildcreatures/sounds/lightning_dragon"
+    os.makedirs(LIGHTNING_OUT, exist_ok=True)
+    rng = np.random.default_rng(31)
+    save("call", lightning_call(), out=LIGHTNING_OUT)
+    save("spark", lightning_spark(), out=LIGHTNING_OUT, peak=0.8)

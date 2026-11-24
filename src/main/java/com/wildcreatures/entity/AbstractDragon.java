@@ -124,6 +124,18 @@ public abstract class AbstractDragon extends Monster {
     /** Which liquids stop the breath. Fire goes straight through water to the bottom; a cold breath could stop at the surface. */
     protected ClipContext.Fluid breathBlockedBy() { return ClipContext.Fluid.NONE; }
 
+    /** Head pitch in degrees while using the breath (negative looks up). By default it points the mouth at the aim. */
+    protected float breathPitch(Vec3 mouth, Vec3 aim) {
+        double h = Math.sqrt((aim.x - mouth.x) * (aim.x - mouth.x) + (aim.z - mouth.z) * (aim.z - mouth.z));
+        return Mth.clamp((float) (-Mth.atan2(aim.y - mouth.y, h) * Mth.RAD_TO_DEG), -40.0F, 50.0F);
+    }
+
+    /** Ticks left in the current breath (counts down to 0). */
+    protected int breathTicksLeft() { return breathTicks; }
+
+    /** How much harder (or softer) this dragon hits for its size: 1 for a normal dragon. */
+    protected float sizeDamage() { return size.damage; }
+
     // ------------------------------------------------------------------ setup
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -139,10 +151,16 @@ public abstract class AbstractDragon extends Monster {
 
     /** Spawn check for one kind of dragon: never on Peaceful, natural spawns only under open sky and only 1 in spawnRarity tries. */
     public static <T extends AbstractDragon> SpawnPlacements.SpawnPredicate<T> spawnRules(DragonStats stats) {
+        return spawnRules(stats, 1);
+    }
+
+    /** Like {@link #spawnRules(DragonStats)}, but natural spawns are {@code stormBoost} times more likely during a thunderstorm. */
+    public static <T extends AbstractDragon> SpawnPlacements.SpawnPredicate<T> spawnRules(DragonStats stats, int stormBoost) {
         return (type, level, reason, pos, random) -> {
             if (level.getDifficulty() == Difficulty.PEACEFUL || !checkMobSpawnRules(type, level, reason, pos, random)) return false;
             if (reason != MobSpawnType.NATURAL && reason != MobSpawnType.CHUNK_GENERATION) return true;
             int rarity = stats.spawnRarity.get();
+            if (rarity > 0 && stormBoost > 1 && level.getLevel().isThundering()) rarity = Math.max(1, rarity / stormBoost);
             return rarity > 0 && level.canSeeSky(pos.above()) && random.nextInt(rarity) == 0;
         };
     }
@@ -398,8 +416,9 @@ public abstract class AbstractDragon extends Monster {
         return new DamageSource(level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(breathDamageType()), this);
     }
 
-    /** One server tick of breath aimed at {@code aim}. */
-    private void breathTick(Vec3 aim) {
+    /** Server side, every tick of the breath after a short wind-up: hurts what's in the stream and changes blocks where it lands.
+     *  A dragon whose attack isn't a stream (like the Lightning Dragon's strikes) overrides this. */
+    protected void breathTick(Vec3 aim) {
         DragonStats stats = stats();
         Vec3 mouth = mouthPos();
         Vec3 dir = aim.subtract(mouth).normalize();
@@ -537,9 +556,7 @@ public abstract class AbstractDragon extends Monster {
             setYRot(Mth.rotLerp(0.25F, getYRot(), yaw));
             yBodyRot = getYRot();
             yHeadRot = getYRot();
-            Vec3 m = mouthPos();
-            double h = Math.sqrt((aim.x - m.x) * (aim.x - m.x) + (aim.z - m.z) * (aim.z - m.z));
-            setXRot(Mth.clamp((float) (-Mth.atan2(aim.y - m.y, h) * Mth.RAD_TO_DEG), -40.0F, 50.0F));
+            setXRot(breathPitch(mouthPos(), aim));
             if (isFlying()) flyMoveControl.hover();
             if (breathTicks < stats().breathTicks.get() - 4) breathTick(aim);   // short wind-up first
         }

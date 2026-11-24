@@ -9,7 +9,7 @@ public final class CreatureConfig {
     public static final ForgeConfigSpec SPEC;
 
     /** One section per dragon type. */
-    public static final DragonStats RED, FROST;
+    public static final DragonStats RED, FROST, LIGHTNING;
 
     public static final ForgeConfigSpec.IntValue ASHEN_WASTES_WEIGHT;
     public static final ForgeConfigSpec.DoubleValue ESSENCE_CHANCE, ESSENCE_CHANCE_SMALL, ESSENCE_CHANCE_GIANT;
@@ -32,6 +32,17 @@ public final class CreatureConfig {
                 .effectRadius("frostRadius", "Radius around the aim point that gets frozen and snowed on", 3.0)
                 .effectSeconds("slowSeconds", "Seconds a creature hit by the breath stays slowed. It also freezes up like in powder snow (leather armor stops that part)", 5)
                 .affectsBlocks("breathFreezesBlocks", "Whether the breath turns water to ice and lava to obsidian, puts out fires and lays snow (also needs the mobGriefing game rule on)")
+                .build(b);
+        LIGHTNING = new DragonStats.Defaults("lightning_dragon", "Lightning Dragon", "windswept hills and stony peaks; 4 times as often in a thunderstorm")
+                .health(190.0, 115.0, 380.0)
+                .armor(9.0)
+                .bite(15.0, 30)
+                .breath("lightning call", 8.0, 40, 140, 24.0)
+                .damageNote(" (sparks mark the spot, then lightning strikes there half a second later; a call strikes about every 0.6 seconds)")
+                .effectRadius("strikeRadius", "How close to a strike a creature has to be to get hit", 3.0)
+                .effectSeconds("burnSeconds", "Seconds a creature hit by a strike burns for", 4)
+                .affectsBlocks("strikesStartFires", "Whether strikes set the ground on fire like normal lightning, on Normal and Hard difficulty (also needs the mobGriefing and doFireTick game rules on). A strike that hits a lightning rod never starts a fire")
+                .flying(true, 0.55)
                 .build(b);
         b.comment("Dragon Essence drops (percent chance when a player kills any kind of dragon; each level of Looting adds half of the normal chance)").push("dragon_essence");
         ESSENCE_CHANCE = b.comment("Normal-size dragon").defineInRange("dropChancePercent", 2.0, 0.0, 100.0);

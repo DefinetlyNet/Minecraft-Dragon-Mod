@@ -25,7 +25,7 @@ public final class DragonStats {
         armor = b.comment("Armor points (a full diamond suit is 20)").defineInRange("armor", d.armor, 0.0, 30.0);
         biteDamage = b.comment("Damage of one bite").defineInRange("biteDamage", d.biteDamage, 0.0, 1000.0);
         biteCooldown = b.comment("Ticks between bites (20 ticks = 1 second)").defineInRange("biteCooldownTicks", d.biteCooldown, 5, 400);
-        breathDamage = b.comment("Damage of each " + d.breathName + " hit (a target in the breath is hit about twice a second)")
+        breathDamage = b.comment("Damage of each " + d.breathName + " hit" + d.damageNote)
                 .defineInRange("breathDamage", d.breathDamage, 0.0, 1000.0);
         breathTicks = b.comment("How long one " + d.breathName + " lasts, in ticks").defineInRange("breathDurationTicks", d.breathTicks, 10, 400);
         breathCooldown = b.comment("Minimum ticks between " + d.breathName + "s").defineInRange("breathCooldownTicks", d.breathCooldown, 20, 2400);
@@ -48,6 +48,7 @@ public final class DragonStats {
         private String breathName = "breath";
         private double breathDamage = 7, breathRange = 18;
         private int breathTicks = 50, breathCooldown = 120;
+        private String damageNote = " (a target in the breath is hit about twice a second)";
         private String radiusKey = "effectRadius", radiusComment = "Radius around the aim point that the breath affects";
         private double radius = 3;
         private String secondsKey = "effectSeconds", secondsComment = "Seconds the breath's effect lasts on a creature";
@@ -78,6 +79,8 @@ public final class DragonStats {
             return this;
         }
 
+        /** Replaces the note after the breathDamage comment (normally how often the breath hits). */
+        public Defaults damageNote(String note) { damageNote = note; return this; }
         public Defaults effectRadius(String key, String comment, double value) { radiusKey = key; radiusComment = comment; radius = value; return this; }
         public Defaults effectSeconds(String key, String comment, int value) { secondsKey = key; secondsComment = comment; seconds = value; return this; }
         public Defaults affectsBlocks(String key, String comment) { blocksKey = key; blocksComment = comment; return this; }

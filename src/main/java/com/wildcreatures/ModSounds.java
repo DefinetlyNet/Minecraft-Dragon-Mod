@@ -20,6 +20,8 @@ public final class ModSounds {
     public static final RegistryObject<SoundEvent> DRAGON_FLAP = register("red_dragon.flap");
     public static final RegistryObject<SoundEvent> DRAGON_STEP = register("red_dragon.step");
     public static final RegistryObject<SoundEvent> FROST_DRAGON_BREATH = register("frost_dragon.breath");
+    public static final RegistryObject<SoundEvent> LIGHTNING_DRAGON_CALL = register("lightning_dragon.call");
+    public static final RegistryObject<SoundEvent> LIGHTNING_DRAGON_SPARK = register("lightning_dragon.spark");
 
     private static RegistryObject<SoundEvent> register(String name) {
         return SOUNDS.register(name, () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(WildCreatures.MOD_ID, name)));

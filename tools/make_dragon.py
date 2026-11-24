@@ -263,6 +263,21 @@ VARIANTS = [
          claw=(64, 84, 116), tooth=(246, 250, 255), mouth=(74, 86, 132), tongue=(122, 102, 172), nostril=(34, 54, 86),
          scale_edge=-0.03, rime=0.10,
          item_gradient=[(20, (40, 70, 120)), (70, (150, 196, 232)), (120, (210, 232, 248)), (190, (250, 253, 255))]),
+    dict(name="lightning_dragon",
+         # navy back, royal blue sides, then a short warm band into a gold belly
+         stops=[(0.0, (12, 20, 58)), (0.34, (24, 46, 124)), (0.6, (46, 84, 172)), (0.74, (72, 104, 176)),
+                (0.85, (192, 148, 62)), (1.0, (240, 198, 98))],
+         dorsal=(12, 20, 58), flank=(24, 46, 124), flank2=(46, 84, 172), belly=(240, 198, 98),
+         spike_base=(204, 152, 50), spike_tip=(255, 230, 142), ridge=0.85,
+         horn_base=(255, 238, 168), horn_mid=(216, 166, 64), horn_tip=(112, 72, 22),
+         membrane_root=(14, 22, 64), membrane_edge=(48, 88, 178), vein=(220, 172, 66),
+         strut=(158, 116, 40), leg_dark=(10, 14, 42),
+         eye=(255, 248, 196), eye_rim=(255, 184, 40), pupil=(34, 18, 0),
+         claw=(30, 28, 38), tooth=(240, 232, 208), mouth=(36, 20, 54), tongue=(112, 54, 112), nostril=(6, 8, 24),
+         scale_edge=-0.08, rime=0.0,
+         # thin branching lightning lines over the back and sides, glowing in the dark
+         markings=dict(color=(255, 214, 104), glow=(210, 156, 44)),
+         item_gradient=[(20, (8, 12, 42)), (70, (28, 54, 140)), (120, (66, 106, 198)), (190, (250, 214, 112))]),
 ]
 
 BODY_LIKE = ("body", "neck1", "neck2", "head", "jaw", "tail1", "tail2", "tail3", "tail4", "tail_tip")
@@ -385,11 +400,55 @@ def body_t(name, ytop, ybot, py, face):
     return t
 
 
+def make_bolts(seed):
+    """Zigzag lightning bolts running down the sides from the spine, from the base of the neck to the tail.
+    Each is a list of (z along the body in model pixels, t from back 0 to belly 1)."""
+    r = np.random.default_rng(seed)
+    bolts, z = [], -36.0
+    while z < 64:
+        pts, t, zz, d = [(z, 0.05)], 0.05, z, 1 if r.random() < 0.5 else -1
+        while t < 0.56:
+            t += r.uniform(0.08, 0.13)
+            zz += d * r.uniform(1.0, 2.4) + 0.9               # zig, zag, drifting toward the tail
+            d = -d
+            pts.append((zz, t))
+        bolts.append(pts)
+        if r.random() < 0.75:                                 # a fork off the middle
+            bz, bt = pts[int(r.integers(1, len(pts) - 1))]
+            fork, side = [(bz, bt)], 1 if r.random() < 0.5 else -1
+            for _ in range(2):
+                bt += r.uniform(0.07, 0.11)
+                bz += side * r.uniform(1.4, 2.6)
+                side = -side if r.random() < 0.5 else side
+                fork.append((bz, bt))
+            bolts.append(fork)
+        z += r.uniform(8.0, 12.0)
+    return bolts
+
+
+BOLTS = make_bolts(5)
+
+
+def lightning_lines(model, tb, height):
+    """0..1 strength of the lightning bolt markings: a sharp bright core with a soft glow around it,
+    kept off the belly. height turns the back-to-belly position into model pixels."""
+    zm, ym = model[2], tb * height
+    d = np.full(zm.shape, 99.0)
+    for bolt in BOLTS:
+        for (z1, t1), (z2, t2) in zip(bolt, bolt[1:]):
+            y1, y2 = t1 * height, t2 * height
+            ez, ey = z2 - z1, y2 - y1
+            k = np.clip(((zm - z1) * ez + (ym - y1) * ey) / (ez * ez + ey * ey + 1e-9), 0, 1)
+            d = np.minimum(d, np.hypot(zm - (z1 + k * ez), ym - (y1 + k * ey)))
+    line = np.maximum(np.exp(-(d / 0.32) ** 2), 0.35 * np.exp(-(d / 0.9) ** 2))
+    return line * (1.0 - smoothstep(0.62, 0.8, tb))
+
+
 def paint_variant(v):
     img = np.zeros((TH * RES, TW * RES, 3))
     alpha = np.zeros((TH * RES, TW * RES))
     glow = np.zeros((TH * RES, TW * RES, 4))
-    stops = [(0.0, v["dorsal"]), (0.38, v["flank"]), (0.72, v["flank2"]), (1.0, v["belly"])]
+    stops = v.get("stops") or [(0.0, v["dorsal"]), (0.38, v["flank"]), (0.72, v["flank2"]), (1.0, v["belly"])]
     rng = np.random.default_rng(11)
     for (name, parent, pivot, rot, boxes) in PARTS:
         ytop, ybot = core_range(boxes)
@@ -406,6 +465,7 @@ def paint_variant(v):
                 px, py, pz = p
                 model = tvec[:, None, None] + np.tensordot(rmat, p, axes=1)
                 k = 1.0 + 0.035 * vnoise(model, 7.0, 1) + 0.02 * vnoise(model, 2.5, 2)
+                tb = None                                                 # back (0) to belly (1), where markings may go
                 if mat in ("scale", "ridge"):
                     if is_limb(name):
                         side = n[0] * outer_sign                          # +1 outer face, -1 inner face
@@ -430,6 +490,8 @@ def paint_variant(v):
                     else:
                         col = ramp(stops, body_t(name, ytop, ybot, py, face))
                         cw = SCALE_SIZE.get(name, 6)
+                        if name not in ("head", "jaw"):
+                            tb = body_t(name, ytop, ybot, py, face)
                     if mat == "ridge":
                         col = col * v["ridge"]
                     if face == "bottom" and name in BODY_LIKE and name not in ("head", "jaw", "tail_tip"):
@@ -502,8 +564,16 @@ def paint_variant(v):
                     col = np.array(v["nostril"], float) * np.ones(px.shape + (3,))
                 else:
                     raise ValueError(mat)
+                mk = None
+                if v.get("markings") and tb is not None:
+                    mk = lightning_lines(model, tb, ybot - ytop)
+                    col = col + (np.array(v["markings"]["color"], float) - col) * (0.85 * mk)[..., None]
                 col = col * np.asarray(k)[..., None] + rng.normal(0, 1.2, col.shape)
                 img[V0:V0 + FH, U0:U0 + FW] = col
+                if mk is not None:
+                    gl = glow[V0:V0 + FH, U0:U0 + FW]
+                    gl[..., :3] = np.maximum(gl[..., :3], np.array(v["markings"]["glow"], float) * mk[..., None])
+                    gl[..., 3] = np.maximum(gl[..., 3], np.where(mk > 0.02, 255.0, 0.0))
                 alpha[V0:V0 + FH, U0:U0 + FW] = 255
                 if mat == "eye":
                     glow[V0:V0 + FH, U0:U0 + FW, :3] = col

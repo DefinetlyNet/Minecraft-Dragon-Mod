@@ -31,6 +31,7 @@ public final class ClientSetup {
     public static void renderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.RED_DRAGON.get(), ctx -> new DragonRenderer<>(ctx, "red_dragon"));
         event.registerEntityRenderer(ModEntities.FROST_DRAGON.get(), ctx -> new DragonRenderer<>(ctx, "frost_dragon"));
+        event.registerEntityRenderer(ModEntities.LIGHTNING_DRAGON.get(), ctx -> new DragonRenderer<>(ctx, "lightning_dragon"));
         event.registerBlockEntityRenderer(ModBlockEntities.SIGN.get(), SignRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.HANGING_SIGN.get(), HangingSignRenderer::new);
     }

@@ -1,0 +1,10 @@
+{
+  "type": "forge:add_spawns",
+  "biomes": "#wildcreatures:lightning_dragon_habitat",
+  "spawners": {
+    "type": "wildcreatures:lightning_dragon",
+    "weight": 6,
+    "minCount": 1,
+    "maxCount": 1
+  }
+}

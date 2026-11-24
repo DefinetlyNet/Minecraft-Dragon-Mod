@@ -40,6 +40,8 @@ public class WildCreatures {
                 out.accept(ModItems.RED_DRAGON_SCALE.get());
                 out.accept(ModItems.FROST_DRAGON_SPAWN_EGG.get());
                 out.accept(ModItems.FROST_DRAGON_SCALE.get());
+                out.accept(ModItems.LIGHTNING_DRAGON_SPAWN_EGG.get());
+                out.accept(ModItems.LIGHTNING_DRAGON_SCALE.get());
                 out.accept(ModItems.DRAGON_ESSENCE.get());
                 out.accept(ModItems.DRAGON_SWORD.get());
                 out.accept(ModItems.DRAGON_PICKAXE.get());
@@ -86,10 +88,12 @@ public class WildCreatures {
         if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
             event.accept(ModItems.RED_DRAGON_SPAWN_EGG);
             event.accept(ModItems.FROST_DRAGON_SPAWN_EGG);
+            event.accept(ModItems.LIGHTNING_DRAGON_SPAWN_EGG);
         }
         if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
             event.accept(ModItems.RED_DRAGON_SCALE);
             event.accept(ModItems.FROST_DRAGON_SCALE);
+            event.accept(ModItems.LIGHTNING_DRAGON_SCALE);
         }
         if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS) {
             event.accept(ModBlocks.BURNT_OAK_LOG);
