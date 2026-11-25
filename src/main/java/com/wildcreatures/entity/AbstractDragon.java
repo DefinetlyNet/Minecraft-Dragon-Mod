@@ -82,6 +82,9 @@ import java.util.function.Predicate;
  * Dragons can also be tamed (the Black Dragon by feeding it; {@link #tamedByFeeding}). A tamed dragon follows its owner,
  * stays put when told to, fights for its owner, and once it wears a saddle the owner can ride it: it walks and flies
  * where the rider looks, and the rider's attack key fires its breath ({@link #riderBreath}).
+ * <p>
+ * A dragon hatched from an egg ({@link #hatchFor}) starts out tame and tiny, and grows up over time ({@link #getGrowth}):
+ * a baby is smaller and weaker, with a bigger head and a higher voice, and is too young for a saddle.
  */
 public abstract class AbstractDragon extends Monster implements OwnableEntity {
     /** The model is drawn 1.8x larger than its pixel size. Used by the renderer and for the mouth position. */
@@ -95,6 +98,8 @@ public abstract class AbstractDragon extends Monster implements OwnableEntity {
     private static final EntityDataAccessor<Byte> TAME_FLAGS = SynchedEntityData.defineId(AbstractDragon.class, EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<Optional<UUID>> OWNER = SynchedEntityData.defineId(AbstractDragon.class, EntityDataSerializers.OPTIONAL_UUID);
     private static final int TAME = 1, STAYING = 2, SADDLED = 4;
+    /** How grown up it is, from 0 (just hatched) to 1 (fully grown, like every wild dragon). */
+    private static final EntityDataAccessor<Float> GROWTH = SynchedEntityData.defineId(AbstractDragon.class, EntityDataSerializers.FLOAT);
 
     /** Dragon sizes: how big it is drawn, and how its damage is scaled. Health comes from the config. */
     public enum Size {
@@ -103,8 +108,10 @@ public abstract class AbstractDragon extends Monster implements OwnableEntity {
         Size(float scale, float damage) { this.scale = scale; this.damage = damage; }
     }
     private Size size = Size.NORMAL;
+    /** Exact growth (the synced copy is only updated about once a second while it grows). */
+    private float growth = 1.0F;
 
-    private static final byte BITE_EVENT = 4, TAME_FAIL_EVENT = 6, TAME_EVENT = 7;
+    private static final byte BITE_EVENT = 4, TAME_FAIL_EVENT = 6, TAME_EVENT = 7, GROW_EVENT = 8;
     private static final int BITE_ANIM_TICKS = 10;
 
     /** Where the rider sits, in model pixels: how far forward of the middle of the body, and how high the top of the saddle is. */
@@ -178,8 +185,11 @@ public abstract class AbstractDragon extends Monster implements OwnableEntity {
     /** Ticks left in the current breath (counts down to 0). */
     protected int breathTicksLeft() { return breathTicks; }
 
-    /** How much harder (or softer) this dragon hits for its size: 1 for a normal dragon. */
-    protected float sizeDamage() { return size.damage; }
+    /** How much harder (or softer) this dragon hits for its size and age: 1 for a normal grown-up dragon, a quarter of that just out of the egg. */
+    protected float sizeDamage() { return size.damage * (0.25F + 0.75F * growth); }
+
+    /** The pitch of its roars and growls before any baby squeak is added (1 = the Red Dragon's voice). */
+    protected float voicePitch() { return 1.0F; }
 
     /** Whether a wild one can be tamed by feeding it meat or fish. */
     protected boolean tamedByFeeding() { return false; }
@@ -253,6 +263,7 @@ public abstract class AbstractDragon extends Monster implements OwnableEntity {
         entityData.define(SIZE, 1.0F);
         entityData.define(TAME_FLAGS, (byte) 0);
         entityData.define(OWNER, Optional.empty());
+        entityData.define(GROWTH, 1.0F);
     }
 
     @Override
@@ -275,25 +286,88 @@ public abstract class AbstractDragon extends Monster implements OwnableEntity {
 
     // ------------------------------------------------------------------ size
 
-    /** How big this dragon is compared to a normal one (0.7 small, 1 normal, 1.5 giant). */
+    /** How big this dragon is drawn compared to a normal grown-up one: its size (0.7 small, 1 normal, 1.5 giant) times how grown up it is. */
     public float getSizeScale() { return entityData.get(SIZE); }
 
     public Size getSize() { return size; }
 
+    /** 0 just out of the egg, 1 fully grown. Every wild dragon is fully grown. */
+    public float getGrowth() { return entityData.get(GROWTH); }
+
+    /** Hatched from an egg and still growing up. */
+    @Override public boolean isBaby() { return getGrowth() < 1.0F; }
+
+    /** A baby drops nothing when it dies (vanilla monsters drop loot and experience even as babies, like baby zombies). */
+    @Override protected boolean shouldDropLoot() { return !isBaby(); }
+
+    @Override public boolean shouldDropExperience() { return !isBaby(); }
+
+    /** The size is all in getSizeScale (vanilla would shrink a baby to half on top of that). */
+    @Override public float getScale() { return 1.0F; }
+
+    /** A baby is drawn a quarter of the size of a grown dragon, and grows evenly from there. */
+    private static float ageScale(float growth) { return 0.25F + 0.75F * growth; }
+
     public void setSize(Size newSize) {
-        DragonStats stats = stats();
         size = newSize;
-        entityData.set(SIZE, newSize.scale);
-        double health = switch (newSize) {
+        applyStats();
+        setHealth(getMaxHealth());
+    }
+
+    /** Server side. Sets how grown up it is (0 to 1), and its size, health and bite with it. A grown-up dragon can't get younger. */
+    public void setGrowth(float newGrowth) {
+        growth = Mth.clamp(newGrowth, 0.0F, 1.0F);
+        entityData.set(GROWTH, growth);
+        float lost = getMaxHealth() - getHealth();
+        applyStats();
+        setHealth(getMaxHealth() - lost);        // growing adds health: it doesn't look hurt afterwards
+    }
+
+    /** Health, bite damage, XP and drawn size from its size and how grown up it is. A baby starts with a fifth of a grown dragon's health. */
+    private void applyStats() {
+        DragonStats stats = stats();
+        double health = switch (size) {
             case SMALL -> stats.smallHealth.get();
             case GIANT -> stats.giantHealth.get();
             default -> stats.health.get();
         };
-        getAttribute(Attributes.MAX_HEALTH).setBaseValue(health);
-        getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(stats.biteDamage.get() * newSize.damage);
-        setHealth(getMaxHealth());
+        getAttribute(Attributes.MAX_HEALTH).setBaseValue(health * (0.2 + 0.8 * growth));
+        getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(stats.biteDamage.get() * sizeDamage());
         xpReward = (int) (60 * health / 200);
+        entityData.set(SIZE, size.scale * ageScale(growth));
         refreshDimensions();
+    }
+
+    /**
+     * Makes this a dragon just out of its egg: tiny, tame, belonging to {@code owner} (if there is one) and never despawning.
+     * It grows up into a normal-size dragon, or now and then a giant (with the same chance as wild ones).
+     */
+    public void hatchFor(@Nullable UUID owner) {
+        growth = 0.0F;
+        entityData.set(GROWTH, 0.0F);
+        setSize(random.nextInt(100) < stats().giantChance.get() ? Size.GIANT : Size.NORMAL);
+        if (owner != null) {
+            setFlag(TAME, true);
+            setOwnerUUID(owner);
+        }
+        setPersistenceRequired();
+    }
+
+    /** Server side, every tick while it's a baby: grows a little, all the way up over growUpMinutes. */
+    private void grow() {
+        float step = (float) (1.0 / (CreatureConfig.GROW_UP_MINUTES.get() * 1200.0));
+        growth = Math.min(1.0F, growth + step);
+        if (growth >= 1.0F) grownUp();
+        else if (tickCount % 20 == 0) setGrowth(growth);
+    }
+
+    /** Fully grown: big enough now for a saddle. Tells its owner. */
+    private void grownUp() {
+        setGrowth(1.0F);
+        playSound(ModSounds.DRAGON_ROAR.get(), getSoundVolume(), getVoicePitch());
+        level().broadcastEntityEvent(this, GROW_EVENT);
+        if (getOwner() instanceof Player owner)
+            owner.sendSystemMessage(Component.translatable("message.wildcreatures.dragon_grown", getDisplayName()));
     }
 
     @Override
@@ -309,6 +383,7 @@ public abstract class AbstractDragon extends Monster implements OwnableEntity {
     public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
         super.onSyncedDataUpdated(key);
         if (SIZE.equals(key)) refreshDimensions();
+        if (GROWTH.equals(key) && level().isClientSide) growth = getGrowth();
     }
 
     @Override
@@ -426,6 +501,9 @@ public abstract class AbstractDragon extends Monster implements OwnableEntity {
         player.displayClientMessage(Component.translatable("message.wildcreatures.dragon_tamed", getDisplayName()), true);
     }
 
+    /** Hearts around its head, for everyone nearby to see (a hatchling meeting its owner). */
+    public void showHearts() { level().broadcastEntityEvent(this, TAME_EVENT); }
+
     /** Meat and fish. */
     public boolean isDragonFood(ItemStack stack) {
         if (stack.is(ItemTags.FISHES)) return true;
@@ -439,14 +517,26 @@ public abstract class AbstractDragon extends Monster implements OwnableEntity {
         boolean client = level().isClientSide;
         if (isTame()) {
             if (!isOwnedBy(player)) return InteractionResult.PASS;
-            if (isDragonFood(stack) && getHealth() < getMaxHealth()) {
+            if (isDragonFood(stack) && (isBaby() || getHealth() < getMaxHealth())) {
                 if (!client) {
                     FoodProperties food = stack.getFoodProperties(this);
                     heal(food == null ? 4.0F : food.getNutrition() * 3.0F);
-                    playSound(SoundEvents.GENERIC_EAT, 1.5F, 0.6F);
-                    level().broadcastEntityEvent(this, TAME_EVENT);
+                    playSound(SoundEvents.GENERIC_EAT, 1.5F, isBaby() ? 1.2F : 0.6F);
+                    if (isBaby()) {
+                        // a meal helps a baby grow up faster
+                        float more = CreatureConfig.FEED_GROWTH_PERCENT.get() / 100.0F;
+                        if (growth + more >= 1.0F) grownUp();
+                        else setGrowth(growth + more);
+                        level().broadcastEntityEvent(this, GROW_EVENT);
+                    } else {
+                        level().broadcastEntityEvent(this, TAME_EVENT);
+                    }
                     if (!player.getAbilities().instabuild) stack.shrink(1);
                 }
+                return InteractionResult.sidedSuccess(client);
+            }
+            if (stack.is(Items.SADDLE) && !isSaddled() && isBaby()) {
+                if (!client) player.displayClientMessage(Component.translatable("message.wildcreatures.dragon_too_young", getDisplayName()), true);
                 return InteractionResult.sidedSuccess(client);
             }
             if (stack.is(Items.SADDLE) && !isSaddled()) {
@@ -484,13 +574,13 @@ public abstract class AbstractDragon extends Monster implements OwnableEntity {
         return super.mobInteract(player, hand);
     }
 
-    /** Client side: hearts when it's tamed (or healed), smoke when it isn't won over yet. */
-    private void tameParticles(boolean success) {
+    /** Client side: hearts when it's tamed (or healed), smoke when it isn't won over yet, green sparkles when a baby grows. */
+    private void tameParticles(ParticleOptions particle, int count) {
         Vec3 head = mouthPos();
-        ParticleOptions particle = success ? ParticleTypes.HEART : ParticleTypes.SMOKE;
-        for (int i = 0; i < (success ? 9 : 14); i++) {
-            level().addParticle(particle, head.x + random.nextGaussian() * 0.9, head.y + 0.4 + random.nextGaussian() * 0.6,
-                    head.z + random.nextGaussian() * 0.9, random.nextGaussian() * 0.02, 0.04, random.nextGaussian() * 0.02);
+        double spread = 0.9 * Math.min(1.0, getSizeScale() * 1.5);
+        for (int i = 0; i < count; i++) {
+            level().addParticle(particle, head.x + random.nextGaussian() * spread, head.y + 0.4 * spread + random.nextGaussian() * 0.6 * spread,
+                    head.z + random.nextGaussian() * spread, random.nextGaussian() * 0.02, 0.04, random.nextGaussian() * 0.02);
         }
     }
 
@@ -757,8 +847,12 @@ public abstract class AbstractDragon extends Monster implements OwnableEntity {
             clientTick();
             return;
         }
+        if (growth < 1.0F && isAlive()) grow();
         if (biteCooldown > 0) biteCooldown--;
         if (breathCooldown > 0 && !isBreathing()) breathCooldown--;
+        // a target it was set on from outside (like the thief of an egg) is dropped once it's gone, far away or can't be fought
+        LivingEntity old = getTarget();
+        if (old != null && (!old.isAlive() || !old.canBeSeenAsEnemy() || distanceToSqr(old) > 96 * 96)) setTarget(null);
         if (riderBreathing) tickRiderBreath();
         if (biteTicks > 0 && --biteTicks == 4) {
             LivingEntity target = getTarget();
@@ -851,8 +945,10 @@ public abstract class AbstractDragon extends Monster implements OwnableEntity {
         climb += ((float) Mth.clamp((getY() - yo) * 40.0, -25.0, 25.0) - climb) * 0.3F;
         if (biteAnim > 0) biteAnim--;
 
-        if (isFlying() && tickCount % 21 == 0) {
-            level().playLocalSound(getX(), getY(), getZ(), ModSounds.DRAGON_FLAP.get(), getSoundSource(), 2.0F, 0.9F + random.nextFloat() * 0.2F, false);
+        if (isFlying() && tickCount % (growth < 1.0F ? 12 : 21) == 0) {
+            // small wings flap faster and lighter
+            level().playLocalSound(getX(), getY(), getZ(), ModSounds.DRAGON_FLAP.get(), getSoundSource(), 0.6F + 1.4F * growth,
+                    (0.9F + random.nextFloat() * 0.2F) * (1.0F + 0.6F * (1.0F - growth)), false);
         }
         if (isBreathing()) {
             Vec3 mouth = mouthPos();
@@ -866,7 +962,9 @@ public abstract class AbstractDragon extends Monster implements OwnableEntity {
     @Override
     public void handleEntityEvent(byte id) {
         if (id == BITE_EVENT) biteAnim = BITE_ANIM_TICKS;
-        else if (id == TAME_EVENT || id == TAME_FAIL_EVENT) tameParticles(id == TAME_EVENT);
+        else if (id == TAME_EVENT) tameParticles(ParticleTypes.HEART, 9);
+        else if (id == TAME_FAIL_EVENT) tameParticles(ParticleTypes.SMOKE, 14);
+        else if (id == GROW_EVENT) tameParticles(ParticleTypes.HAPPY_VILLAGER, 12);
         else super.handleEntityEvent(id);
     }
 
@@ -935,7 +1033,7 @@ public abstract class AbstractDragon extends Monster implements OwnableEntity {
         double radius = stats.effectRadius.get() * Math.max(1.0, getSizeScale());
 
         if (breathTicks % 4 == 0) {
-            float damage = stats.breathDamage.get().floatValue() * size.damage;
+            float damage = stats.breathDamage.get().floatValue() * sizeDamage();
             AABB area = new AABB(mouth, impact).inflate(radius + 2);
             final Vec3 imp = impact;
             for (LivingEntity e : level().getEntitiesOfClass(LivingEntity.class, area, e -> !isBreathImmune(e))) {
@@ -1091,14 +1189,16 @@ public abstract class AbstractDragon extends Monster implements OwnableEntity {
 
         @Override public boolean canUse() {
             LivingEntity o = getTarget() == null ? followedOwner() : null;
-            if (o == null || distanceToSqr(o) < 14 * 14 && !(airborne(o) && !isFlying())) return false;
+            // babies keep closer to you than grown dragons do
+            double start = 6.0 + 8.0 * getGrowth();
+            if (o == null || distanceToSqr(o) < start * start && !(airborne(o) && !isFlying())) return false;
             owner = o;
             return true;
         }
 
         @Override public boolean canContinueToUse() {
             if (owner == null || owner != followedOwner() || getTarget() != null) return false;
-            double near = isFlying() ? 9.0 : 6.0;
+            double near = (isFlying() ? 9.0 : 6.0) * (0.4F + 0.6F * getGrowth());
             return distanceToSqr(owner) > near * near || airborne(owner) && !isFlying();
         }
 
@@ -1133,8 +1233,8 @@ public abstract class AbstractDragon extends Monster implements OwnableEntity {
             } else if (!landing) {
                 // circle in a few blocks off to the side of the owner and a little above them
                 Vec3 away = position().subtract(owner.position()).multiply(1, 0, 1);
-                away = away.lengthSqr() < 1.0E-3 ? Vec3.ZERO : away.normalize().scale(6);
-                flyMoveControl.setWantedPosition(owner.getX() + away.x, owner.getY() + 4, owner.getZ() + away.z, dist > 24 ? 1.5 : 1.0);
+                away = away.lengthSqr() < 1.0E-3 ? Vec3.ZERO : away.normalize().scale(2.0 + 4.0 * getGrowth());
+                flyMoveControl.setWantedPosition(owner.getX() + away.x, owner.getY() + 2.0 + 2.0 * getGrowth(), owner.getZ() + away.z, dist > 24 ? 1.5 : 1.0);
             }
         }
     }
@@ -1336,11 +1436,17 @@ public abstract class AbstractDragon extends Monster implements OwnableEntity {
 
     @Override protected SoundEvent getDeathSound() { return ModSounds.DRAGON_DEATH.get(); }
 
-    @Override protected float getSoundVolume() { return 2.0F; }
+    /** Babies are quieter. */
+    @Override protected float getSoundVolume() { return 0.8F + 1.2F * growth; }
 
-    @Override public float getVoicePitch() { return 1.0F + (random.nextFloat() - 0.5F) * 0.15F; }
+    /** Each kind has its own voice ({@link #voicePitch}); a baby squeaks, up to 1.7 times as high. */
+    @Override public float getVoicePitch() {
+        return (voicePitch() + (random.nextFloat() - 0.5F) * 0.14F) * (1.0F + 0.7F * (1.0F - growth));
+    }
 
-    @Override protected void playStepSound(BlockPos pos, BlockState state) { playSound(ModSounds.DRAGON_STEP.get(), 0.8F, 0.9F + random.nextFloat() * 0.2F); }
+    @Override protected void playStepSound(BlockPos pos, BlockState state) {
+        playSound(ModSounds.DRAGON_STEP.get(), 0.8F * (0.3F + 0.7F * growth), (0.9F + random.nextFloat() * 0.2F) * (1.0F + 0.6F * (1.0F - growth)));
+    }
 
     @Override public SoundSource getSoundSource() { return isFriendly() ? SoundSource.NEUTRAL : SoundSource.HOSTILE; }
 
@@ -1353,19 +1459,24 @@ public abstract class AbstractDragon extends Monster implements OwnableEntity {
         if (getOwnerUUID() != null) tag.putUUID("Owner", getOwnerUUID());
         tag.putBoolean("Staying", isOrderedToSit());
         tag.putBoolean("Saddled", isSaddled());
+        tag.putFloat("Growth", growth);
     }
 
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         if (tag.getBoolean("Flying") && stats().canFly()) setFlying(true);
-        if (tag.contains("DragonSize")) {
+        if (tag.contains("Growth") || tag.contains("DragonSize")) {
+            if (tag.contains("Growth")) {
+                growth = Mth.clamp(tag.getFloat("Growth"), 0.0F, 1.0F);
+                entityData.set(GROWTH, growth);
+            }
             try {
-                Size saved = Size.valueOf(tag.getString("DragonSize").toUpperCase(java.util.Locale.ROOT));
-                float health = getHealth();
-                setSize(saved);
-                if (tag.contains("Health")) setHealth(Math.min(health, getMaxHealth()));
+                if (tag.contains("DragonSize")) size = Size.valueOf(tag.getString("DragonSize").toUpperCase(java.util.Locale.ROOT));
             } catch (IllegalArgumentException ignored) {}
+            float health = getHealth();
+            setSize(size);
+            if (tag.contains("Health")) setHealth(Math.min(health, getMaxHealth()));
         }
         setOwnerUUID(tag.hasUUID("Owner") ? tag.getUUID("Owner") : null);
         setFlag(TAME, tag.getBoolean("Tame") || tag.hasUUID("Owner"));

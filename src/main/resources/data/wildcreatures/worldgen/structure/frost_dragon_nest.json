@@ -1,0 +1,8 @@
+{
+  "type": "wildcreatures:dragon_nest",
+  "style": "frost",
+  "biomes": "#wildcreatures:has_frost_dragon_nest",
+  "step": "surface_structures",
+  "spawn_overrides": {},
+  "terrain_adaptation": "none"
+}

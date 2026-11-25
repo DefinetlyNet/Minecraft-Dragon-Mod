@@ -1,0 +1,6 @@
+{
+  "parent": "wildcreatures:block/dragon_egg",
+  "textures": {
+    "all": "wildcreatures:block/black_dragon_egg"
+  }
+}

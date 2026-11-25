@@ -53,7 +53,7 @@ public class FrostDragon extends AbstractDragon {
     @Override protected ClipContext.Fluid breathBlockedBy() { return ClipContext.Fluid.SOURCE_ONLY; }
 
     /** A little higher-pitched than the Red Dragon. */
-    @Override public float getVoicePitch() { return 1.12F + (random.nextFloat() - 0.5F) * 0.15F; }
+    @Override protected float voicePitch() { return 1.12F; }
 
     @Override
     protected void onBreathHit(LivingEntity target, boolean hurt) {

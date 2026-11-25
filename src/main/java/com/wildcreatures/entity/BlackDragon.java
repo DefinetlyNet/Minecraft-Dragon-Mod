@@ -55,7 +55,7 @@ public class BlackDragon extends AbstractDragon {
     @Override protected boolean huntsOnSight() { return false; }
 
     /** A deeper voice than the others. */
-    @Override public float getVoicePitch() { return 0.84F + (random.nextFloat() - 0.5F) * 0.12F; }
+    @Override protected float voicePitch() { return 0.84F; }
 
     /** Its own shadow can't wither it. */
     @Override

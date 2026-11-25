@@ -1,6 +1,7 @@
 package com.wildcreatures;
 
 import com.mojang.logging.LogUtils;
+import com.wildcreatures.item.DragonEggItem;
 import com.wildcreatures.network.ModNetwork;
 import com.wildcreatures.world.AshenRegion;
 import com.wildcreatures.world.AshenSurface;
@@ -42,14 +43,18 @@ public class WildCreatures {
             .displayItems((params, out) -> {
                 out.accept(ModItems.RED_DRAGON_SPAWN_EGG.get());
                 out.accept(ModItems.RED_DRAGON_SCALE.get());
+                out.accept(ModBlocks.RED_DRAGON_EGG.get());
                 out.accept(ModItems.FROST_DRAGON_SPAWN_EGG.get());
                 out.accept(ModItems.FROST_DRAGON_SCALE.get());
+                out.accept(ModBlocks.FROST_DRAGON_EGG.get());
                 out.accept(ModItems.LIGHTNING_DRAGON_SPAWN_EGG.get());
                 out.accept(ModItems.LIGHTNING_DRAGON_SCALE.get());
+                out.accept(ModBlocks.LIGHTNING_DRAGON_EGG.get());
                 out.accept(ModItems.SEA_DRAGON_SPAWN_EGG.get());
                 out.accept(ModItems.SEA_DRAGON_SCALE.get());
                 out.accept(ModItems.BLACK_DRAGON_SPAWN_EGG.get());
                 out.accept(ModItems.BLACK_DRAGON_SCALE.get());
+                out.accept(ModBlocks.BLACK_DRAGON_EGG.get());
                 out.accept(ModItems.DRAGON_ESSENCE.get());
                 out.accept(ModItems.DRAGON_SWORD.get());
                 out.accept(ModItems.DRAGON_PICKAXE.get());
@@ -61,7 +66,7 @@ public class WildCreatures {
                 out.accept(ModItems.DRAGON_SCALE_LEGGINGS.get());
                 out.accept(ModItems.DRAGON_SCALE_BOOTS.get());
                 ModItems.ITEMS.getEntries().stream().map(i -> i.get())
-                        .filter(i -> i instanceof net.minecraft.world.item.BlockItem || i == ModItems.BURNT_STICK.get())
+                        .filter(i -> i instanceof net.minecraft.world.item.BlockItem && !(i instanceof DragonEggItem) || i == ModItems.BURNT_STICK.get())
                         .forEach(out::accept);
             })
             .build());

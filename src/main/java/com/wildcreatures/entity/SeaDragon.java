@@ -82,7 +82,7 @@ public class SeaDragon extends AbstractDragon {
     @Override protected SoundEvent breathSound() { return ModSounds.SEA_DRAGON_BLAST.get(); }
 
     /** A deep, whale-like voice. */
-    @Override public float getVoicePitch() { return 0.78F + (random.nextFloat() - 0.5F) * 0.12F; }
+    @Override protected float voicePitch() { return 0.78F; }
 
     // ------------------------------------------------------------------ a sea creature
 

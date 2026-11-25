@@ -165,5 +165,22 @@ public class DragonModel<T extends AbstractDragon> extends HierarchicalModel<T> 
         wingL.zRot = -rZ;
         wingL.zScale = gathered;
         wingTipL.zRot = -tipZ;
+
+        // ---- a baby has a big head on a short neck, a short tail and small wings, and grows into its proportions
+        //      (part scales aren't reset with the pose, so they're set every frame)
+        float young = 1.0F - dragon.getGrowth();
+        scale(neck1, 1.0F - 0.15F * young);
+        scale(head, 1.0F + 0.75F * young);
+        scale(tail1, 1.0F - 0.2F * young);
+        float wing = 1.0F - 0.25F * young;
+        wingR.xScale = wingR.yScale = wingL.xScale = wingL.yScale = wing;
+        wingR.zScale *= wing;
+        wingL.zScale *= wing;
+    }
+
+    private static void scale(ModelPart part, float s) {
+        part.xScale = s;
+        part.yScale = s;
+        part.zScale = s;
     }
 }

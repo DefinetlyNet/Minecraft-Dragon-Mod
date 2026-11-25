@@ -69,7 +69,7 @@ public class LightningDragon extends AbstractDragon {
     @Override protected float breathPitch(Vec3 mouth, Vec3 aim) { return -38.0F; }
 
     /** A little deeper than the Red Dragon. */
-    @Override public float getVoicePitch() { return 0.9F + (random.nextFloat() - 0.5F) * 0.15F; }
+    @Override protected float voicePitch() { return 0.9F; }
 
     /** Lightning, its own or a storm's, can't hurt it. */
     @Override

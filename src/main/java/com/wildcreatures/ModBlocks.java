@@ -3,6 +3,9 @@ package com.wildcreatures;
 import com.wildcreatures.block.BurntBushBlock;
 import com.wildcreatures.block.BurntOakGrower;
 import com.wildcreatures.block.BurntSigns;
+import com.wildcreatures.block.DragonEggBlock;
+import com.wildcreatures.item.DragonEggItem;
+import net.minecraft.world.item.Rarity;
 import com.wildcreatures.block.StrippableLogBlock;
 import net.minecraft.world.level.block.ButtonBlock;
 import net.minecraft.world.level.block.DoorBlock;
@@ -84,6 +87,21 @@ public final class ModBlocks {
     public static final RegistryObject<Block> BURNT_BUSH = register("burnt_bush",
             () -> new BurntBushBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_BLACK).replaceable().noCollission()
                     .instabreak().sound(SoundType.GRASS).pushReaction(PushReaction.DESTROY)));
+
+    /** Dragon eggs, found in dragon nests. They hatch into baby dragons (block/DragonEggBlock). */
+    public static final RegistryObject<Block> RED_DRAGON_EGG = egg("red_dragon_egg", DragonEggBlock.Kind.RED, MapColor.COLOR_RED, Rarity.RARE);
+    public static final RegistryObject<Block> FROST_DRAGON_EGG = egg("frost_dragon_egg", DragonEggBlock.Kind.FROST, MapColor.ICE, Rarity.RARE);
+    public static final RegistryObject<Block> LIGHTNING_DRAGON_EGG = egg("lightning_dragon_egg", DragonEggBlock.Kind.LIGHTNING, MapColor.COLOR_BLUE, Rarity.RARE);
+    public static final RegistryObject<Block> BLACK_DRAGON_EGG = egg("black_dragon_egg", DragonEggBlock.Kind.BLACK, MapColor.COLOR_BLACK, Rarity.EPIC);
+
+    private static RegistryObject<Block> egg(String name, DragonEggBlock.Kind kind, MapColor color, Rarity rarity) {
+        RegistryObject<Block> obj = BLOCKS.register(name, () -> new DragonEggBlock(kind, BlockBehaviour.Properties.of().mapColor(color)
+                .strength(1.0F, 9.0F).sound(SoundType.BONE_BLOCK).noOcclusion().pushReaction(PushReaction.DESTROY)));
+        Item.Properties props = new Item.Properties().rarity(rarity);
+        if (kind == DragonEggBlock.Kind.RED) props.fireResistant();
+        ModItems.ITEMS.register(name, () -> new DragonEggItem((DragonEggBlock) obj.get(), props));
+        return obj;
+    }
 
     private static BlockBehaviour.Properties wood(MapColor color) {
         return BlockBehaviour.Properties.of().mapColor(color).instrument(NoteBlockInstrument.BASS).strength(2.0F).sound(SoundType.WOOD);

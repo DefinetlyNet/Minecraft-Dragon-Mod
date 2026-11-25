@@ -12,6 +12,8 @@ public final class CreatureConfig {
     public static final DragonStats RED, FROST, LIGHTNING, SEA, BLACK;
 
     public static final ForgeConfigSpec.IntValue ASHEN_WASTES_WEIGHT;
+    public static final ForgeConfigSpec.DoubleValue EGG_HATCH_MINUTES, GROW_UP_MINUTES;
+    public static final ForgeConfigSpec.IntValue FEED_GROWTH_PERCENT, NEST_EGG_CHANCE;
     public static final ForgeConfigSpec.DoubleValue ESSENCE_CHANCE, ESSENCE_CHANCE_SMALL, ESSENCE_CHANCE_GIANT;
     public static final ForgeConfigSpec.IntValue SWORD_BURN_SECONDS, SHIELD_BURN_SECONDS, ARMOR_FIRE_PIECES;
     public static final ForgeConfigSpec.BooleanValue SWORD_COOKS_DROPS, ARMOR_BLOCKS_DRAGON_BREATH;
@@ -23,6 +25,7 @@ public final class CreatureConfig {
                 .effectRadius("fireRadius", "Radius around the aim point where blocks and creatures catch fire", 3.0)
                 .effectSeconds("burnSeconds", "Seconds a creature hit by the breath keeps burning", 8)
                 .affectsBlocks("breathSetsBlocksOnFire", "Whether the breath sets blocks on fire (also needs the mobGriefing game rule on)")
+                .rideable(0.8)
                 .build(b);
         FROST = new DragonStats.Defaults("frost_dragon", "Frost Dragon", "snowy peaks, snowy slopes and ice spikes")
                 .health(180.0, 110.0, 360.0)
@@ -32,6 +35,7 @@ public final class CreatureConfig {
                 .effectRadius("frostRadius", "Radius around the aim point that gets frozen and snowed on", 3.0)
                 .effectSeconds("slowSeconds", "Seconds a creature hit by the breath stays slowed. It also freezes up like in powder snow (leather armor stops that part)", 5)
                 .affectsBlocks("breathFreezesBlocks", "Whether the breath turns water to ice and lava to obsidian, puts out fires and lays snow (also needs the mobGriefing game rule on)")
+                .rideable(0.8)
                 .build(b);
         LIGHTNING = new DragonStats.Defaults("lightning_dragon", "Lightning Dragon", "windswept hills and stony peaks; 4 times as often in a thunderstorm")
                 .health(190.0, 115.0, 380.0)
@@ -43,6 +47,7 @@ public final class CreatureConfig {
                 .effectSeconds("burnSeconds", "Seconds a creature hit by a strike burns for", 4)
                 .affectsBlocks("strikesStartFires", "Whether strikes set the ground on fire like normal lightning, on Normal and Hard difficulty (also needs the mobGriefing and doFireTick game rules on). A strike that hits a lightning rod never starts a fire")
                 .flying(true, 0.55)
+                .rideable(0.95)
                 .build(b);
         SEA = new DragonStats.Defaults("sea_dragon", "Sea Dragon", "deep oceans")
                 .health(170.0, 100.0, 340.0)
@@ -65,7 +70,7 @@ public final class CreatureConfig {
                 .bite(18.0, 25)
                 .breath("shadow flame", 8.0, 50, 100, 22.0)
                 .effectRadius("flameRadius", "Radius around the aim point where the shadow flame still hits creatures and withers plants", 3.0)
-                .effectSeconds("witherSeconds", "Seconds a creature hit by the shadow flame keeps withering (Wither II; undead mobs are immune to it)", 4)
+                .effectSeconds("witherSeconds", "Seconds a creature hit by the shadow flame keeps withering (Wither II; wither skeletons and the Wither shrug it off)", 4)
                 .affectsBlocks("flameWithersPlants", "Whether the shadow flame withers grass and flowers where it lands (also needs the mobGriefing game rule on). Crops and trees are never touched")
                 .flying(true, 0.6)
                 .tameable(33, 0.9)
@@ -73,6 +78,17 @@ public final class CreatureConfig {
                 .spawnComment("Every minute, each player has a 1 in this many chance of a Black Dragon turning up 24 to 48 blocks away on a"
                         + " jagged, frozen or stony peak, under open sky (only if no other Black Dragon is within 128 blocks). Higher = rarer. 0 = never spawn naturally.")
                 .build(b);
+        b.comment("Dragon eggs and the baby dragons that hatch from them").push("dragon_eggs");
+        EGG_HATCH_MINUTES = b.comment("Minutes an egg takes to hatch once you've placed it (or claimed it in its nest). Half that in the spot it likes:"
+                        + " Red eggs near fire, lava or magma, Frost eggs next to snow or ice, Lightning eggs next to a lightning rod or out in a thunderstorm, Black eggs in the dark")
+                .defineInRange("hatchMinutes", 8.0, 0.05, 240.0);
+        GROW_UP_MINUTES = b.comment("Minutes a baby dragon takes to grow up into a full-size dragon you can saddle and ride")
+                .defineInRange("growUpMinutes", 30.0, 0.1, 1440.0);
+        FEED_GROWTH_PERCENT = b.comment("How much of its growing up a baby dragon skips for each piece of meat or fish you feed it, in percent")
+                .defineInRange("feedGrowthPercent", 5, 0, 100);
+        NEST_EGG_CHANCE = b.comment("Percent chance that a newly generated dragon nest has an egg in it")
+                .defineInRange("nestEggChancePercent", 35, 0, 100);
+        b.pop();
         b.comment("Dragon Essence drops (percent chance when a player kills any kind of dragon; each level of Looting adds half of the normal chance)").push("dragon_essence");
         ESSENCE_CHANCE = b.comment("Normal-size dragon").defineInRange("dropChancePercent", 2.0, 0.0, 100.0);
         ESSENCE_CHANCE_SMALL = b.comment("Small dragon").defineInRange("smallDropChancePercent", 1.0, 0.0, 100.0);

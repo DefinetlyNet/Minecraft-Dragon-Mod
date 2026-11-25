@@ -17,7 +17,7 @@ public final class DragonStats {
     public final ForgeConfigSpec.BooleanValue breathAffectsBlocks, canFly;
     /** Only for dragons you can tame by feeding them (null for the others). */
     public final ForgeConfigSpec.IntValue tameChance;
-    /** Only for dragons you can ride (null for the others). */
+    /** Only for dragons you can ride: tamed ones, and ones hatched from an egg once they've grown up (null for the others). */
     public final ForgeConfigSpec.DoubleValue riddenFlySpeed;
 
     private DragonStats(ForgeConfigSpec.Builder b, Defaults d) {
@@ -48,13 +48,10 @@ public final class DragonStats {
             flySpeed = b.comment("Top flying speed in blocks per tick (a sprinting player is about 0.28)").defineInRange("flySpeed", d.flySpeed, 0.05, 2.0);
             swimSpeed = null;
         }
-        if (d.tameChance >= 0) {
-            tameChance = b.comment("Percent chance that feeding a wild one a piece of meat or fish tames it").defineInRange("tameChancePercent", d.tameChance, 0, 100);
-            riddenFlySpeed = b.comment("Top flying speed when you ride it, in blocks per tick (1.0 = 20 blocks a second)").defineInRange("riddenFlySpeed", d.riddenFlySpeed, 0.1, 3.0);
-        } else {
-            tameChance = null;
-            riddenFlySpeed = null;
-        }
+        tameChance = d.tameChance < 0 ? null
+                : b.comment("Percent chance that feeding a wild one a piece of meat or fish tames it").defineInRange("tameChancePercent", d.tameChance, 0, 100);
+        riddenFlySpeed = d.riddenFlySpeed <= 0 ? null
+                : b.comment("Top flying speed when you ride it, in blocks per tick (1.0 = 20 blocks a second)").defineInRange("riddenFlySpeed", d.riddenFlySpeed, 0.1, 3.0);
         spawnRarity = b.comment(d.spawnComment != null ? d.spawnComment
                         : "Natural spawns (in " + d.home + ") only succeed 1 time in this many tries. Higher = rarer. 0 = never spawn naturally.")
                 .defineInRange("spawnRarity", d.spawnRarity, 0, 10000);
@@ -117,6 +114,8 @@ public final class DragonStats {
         public Defaults spawnComment(String comment) { spawnComment = comment; return this; }
         /** Tamed by feeding it meat or fish (this percent chance per piece), then saddled and ridden (flying this fast, in blocks per tick). */
         public Defaults tameable(int chancePercent, double rideSpeed) { tameChance = chancePercent; riddenFlySpeed = rideSpeed; return this; }
+        /** Can't be tamed by feeding, but one hatched from an egg can be saddled and ridden once grown (flying this fast, in blocks per tick). */
+        public Defaults rideable(double rideSpeed) { riddenFlySpeed = rideSpeed; return this; }
         /** A sea creature: it swims instead of flying, with this top speed when chasing (blocks per tick). */
         public Defaults swimming(double speed) { swimSpeed = speed; canFly = false; return this; }
 
