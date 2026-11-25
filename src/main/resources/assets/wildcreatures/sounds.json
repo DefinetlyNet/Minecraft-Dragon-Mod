@@ -13,5 +13,6 @@
   "frost_dragon.breath": {"subtitle": "subtitles.wildcreatures.frost_dragon.breath", "sounds": [{"name": "wildcreatures:frost_dragon/breath", "attenuation_distance": 32}]},
   "lightning_dragon.call": {"subtitle": "subtitles.wildcreatures.lightning_dragon.call", "sounds": [{"name": "wildcreatures:lightning_dragon/call", "attenuation_distance": 48}]},
   "lightning_dragon.spark": {"subtitle": "subtitles.wildcreatures.lightning_dragon.spark", "sounds": [{"name": "wildcreatures:lightning_dragon/spark", "attenuation_distance": 24}]},
-  "sea_dragon.blast": {"subtitle": "subtitles.wildcreatures.sea_dragon.blast", "sounds": [{"name": "wildcreatures:sea_dragon/blast", "attenuation_distance": 32}]}
+  "sea_dragon.blast": {"subtitle": "subtitles.wildcreatures.sea_dragon.blast", "sounds": [{"name": "wildcreatures:sea_dragon/blast", "attenuation_distance": 32}]},
+  "black_dragon.breath": {"subtitle": "subtitles.wildcreatures.black_dragon.breath", "sounds": [{"name": "wildcreatures:black_dragon/breath", "attenuation_distance": 32}]}
 }

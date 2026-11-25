@@ -141,8 +141,7 @@ public class LightningDragon extends AbstractDragon {
         double r = radius();
         float damage = stats().breathDamage.get().floatValue() * sizeDamage();
         AABB box = new AABB(c.x - r - 1, c.y - 3, c.z - r - 1, c.x + r + 1, c.y + 6, c.z + r + 1);
-        for (LivingEntity e : server.getEntitiesOfClass(LivingEntity.class, box,
-                e -> e.isAlive() && !(e instanceof AbstractDragon) && !e.isSpectator())) {
+        for (LivingEntity e : server.getEntitiesOfClass(LivingEntity.class, box, e -> !isBreathImmune(e))) {
             double dx = e.getX() - c.x, dz = e.getZ() - c.z;
             double reach = r + e.getBbWidth() / 2;
             if (dx * dx + dz * dz > reach * reach || ForgeEventFactory.onEntityStruckByLightning(e, bolt)) continue;

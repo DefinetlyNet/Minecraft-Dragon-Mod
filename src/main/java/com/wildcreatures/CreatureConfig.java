@@ -9,7 +9,7 @@ public final class CreatureConfig {
     public static final ForgeConfigSpec SPEC;
 
     /** One section per dragon type. */
-    public static final DragonStats RED, FROST, LIGHTNING, SEA;
+    public static final DragonStats RED, FROST, LIGHTNING, SEA, BLACK;
 
     public static final ForgeConfigSpec.IntValue ASHEN_WASTES_WEIGHT;
     public static final ForgeConfigSpec.DoubleValue ESSENCE_CHANCE, ESSENCE_CHANCE_SMALL, ESSENCE_CHANCE_GIANT;
@@ -57,6 +57,21 @@ public final class CreatureConfig {
                 .spawnRarity(4)
                 .spawnComment("Every 30 seconds, each player has a 1 in this many chance of a Sea Dragon turning up on the floor of a deep ocean"
                         + " 32 to 64 blocks away (at least 8 blocks down, and only if no other Sea Dragon is around). Higher = rarer. 0 = never spawn naturally.")
+                .build(b);
+        BLACK = new DragonStats.Defaults("black_dragon", "Black Dragon", "the highest mountain peaks")
+                .health(260.0, 160.0, 480.0)
+                .sizeChances(15, 8)
+                .armor(14.0)
+                .bite(18.0, 25)
+                .breath("shadow flame", 8.0, 50, 100, 22.0)
+                .effectRadius("flameRadius", "Radius around the aim point where the shadow flame still hits creatures and withers plants", 3.0)
+                .effectSeconds("witherSeconds", "Seconds a creature hit by the shadow flame keeps withering (Wither II; undead mobs are immune to it)", 4)
+                .affectsBlocks("flameWithersPlants", "Whether the shadow flame withers grass and flowers where it lands (also needs the mobGriefing game rule on). Crops and trees are never touched")
+                .flying(true, 0.6)
+                .tameable(33, 0.9)
+                .spawnRarity(40)
+                .spawnComment("Every minute, each player has a 1 in this many chance of a Black Dragon turning up 24 to 48 blocks away on a"
+                        + " jagged, frozen or stony peak, under open sky (only if no other Black Dragon is within 128 blocks). Higher = rarer. 0 = never spawn naturally.")
                 .build(b);
         b.comment("Dragon Essence drops (percent chance when a player kills any kind of dragon; each level of Looting adds half of the normal chance)").push("dragon_essence");
         ESSENCE_CHANCE = b.comment("Normal-size dragon").defineInRange("dropChancePercent", 2.0, 0.0, 100.0);

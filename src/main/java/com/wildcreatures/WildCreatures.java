@@ -1,5 +1,7 @@
 package com.wildcreatures;
 
+import com.mojang.logging.LogUtils;
+import com.wildcreatures.network.ModNetwork;
 import com.wildcreatures.world.AshenRegion;
 import com.wildcreatures.world.AshenSurface;
 import com.wildcreatures.world.ModWorldgen;
@@ -20,6 +22,7 @@ import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
+import org.slf4j.Logger;
 
 /**
  * Wild Creatures: a creature mod built to grow. Each new mob gets its own entity class in
@@ -29,6 +32,7 @@ import net.minecraftforge.registries.RegistryObject;
 @Mod(WildCreatures.MOD_ID)
 public class WildCreatures {
     public static final String MOD_ID = "wildcreatures";
+    public static final Logger LOGGER = LogUtils.getLogger();
 
     public static final DeferredRegister<CreativeModeTab> TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MOD_ID);
 
@@ -44,6 +48,8 @@ public class WildCreatures {
                 out.accept(ModItems.LIGHTNING_DRAGON_SCALE.get());
                 out.accept(ModItems.SEA_DRAGON_SPAWN_EGG.get());
                 out.accept(ModItems.SEA_DRAGON_SCALE.get());
+                out.accept(ModItems.BLACK_DRAGON_SPAWN_EGG.get());
+                out.accept(ModItems.BLACK_DRAGON_SCALE.get());
                 out.accept(ModItems.DRAGON_ESSENCE.get());
                 out.accept(ModItems.DRAGON_SWORD.get());
                 out.accept(ModItems.DRAGON_PICKAXE.get());
@@ -76,6 +82,7 @@ public class WildCreatures {
         modBus.addListener(this::addToVanillaTabs);
         // Every number lives in config/wildcreatures-common.toml after the first launch.
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, CreatureConfig.SPEC, MOD_ID + "-common.toml");
+        ModNetwork.register();
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
@@ -93,12 +100,14 @@ public class WildCreatures {
             event.accept(ModItems.FROST_DRAGON_SPAWN_EGG);
             event.accept(ModItems.LIGHTNING_DRAGON_SPAWN_EGG);
             event.accept(ModItems.SEA_DRAGON_SPAWN_EGG);
+            event.accept(ModItems.BLACK_DRAGON_SPAWN_EGG);
         }
         if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
             event.accept(ModItems.RED_DRAGON_SCALE);
             event.accept(ModItems.FROST_DRAGON_SCALE);
             event.accept(ModItems.LIGHTNING_DRAGON_SCALE);
             event.accept(ModItems.SEA_DRAGON_SCALE);
+            event.accept(ModItems.BLACK_DRAGON_SCALE);
         }
         if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS) {
             event.accept(ModBlocks.BURNT_OAK_LOG);

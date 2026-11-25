@@ -14,6 +14,8 @@ public class DragonModel<T extends AbstractDragon> extends HierarchicalModel<T> 
     private final ModelPart tail1, tail2, tail3, tail4;
     private final ModelPart[] legs = new ModelPart[4], shins = new ModelPart[4];
     private final ModelPart wingR, wingL, wingTipR, wingTipL;
+    /** The back spikes where a saddle goes (hidden while it wears one). The Sea Dragon's body has none. */
+    private final ModelPart saddleSpikes;
 
     public DragonModel(ModelPart root) {
         this.root = root;
@@ -36,14 +38,19 @@ public class DragonModel<T extends AbstractDragon> extends HierarchicalModel<T> 
         wingL = body.getChild("wing_l");
         wingTipR = wingR.getChild("wing_tip_r");
         wingTipL = wingL.getChild("wing_tip_l");
+        saddleSpikes = body.hasChild("saddle_spikes") ? body.getChild("saddle_spikes") : null;
     }
 
     @Override
     public ModelPart root() { return root; }
 
+    /** The body part, which everything else hangs off (the saddle is drawn on it). */
+    public ModelPart body() { return body; }
+
     @Override
     public void setupAnim(T dragon, float limbSwing, float limbSwingAmount, float age, float netHeadYaw, float headPitch) {
         root.getAllParts().forEach(ModelPart::resetPose);
+        if (saddleSpikes != null) saddleSpikes.visible = !dragon.isSaddled();
         float pt = age - dragon.tickCount;
         float fly = dragon.getFlyAnim(pt);
         float breath = dragon.getBreathAnim(pt);

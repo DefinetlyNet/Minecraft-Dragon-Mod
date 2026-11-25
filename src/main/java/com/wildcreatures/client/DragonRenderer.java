@@ -10,7 +10,6 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.client.renderer.entity.layers.EyesLayer;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 
 /**
  * Draws any of the dragons. Each kind passes its texture name: textures/entity/NAME.png for the body
@@ -35,6 +34,7 @@ public class DragonRenderer<T extends AbstractDragon> extends MobRenderer<T, Dra
         addLayer(new EyesLayer<>(this) {
             @Override public RenderType renderType() { return eyes; }
         });
+        addLayer(new DragonSaddleLayer<>(this, ctx.getModelSet()));
     }
 
     @Override
@@ -53,7 +53,7 @@ public class DragonRenderer<T extends AbstractDragon> extends MobRenderer<T, Dra
         // pitch the whole body a little with climbing / diving while flying (a positive X turn tips the nose up)
         float fly = dragon.getFlyAnim(partialTick);
         if (fly > 0) {
-            float climb = (float) Mth.clamp(dragon.getDeltaMovement().y * 40.0, -25.0, 25.0);
+            float climb = dragon.getClimb(partialTick);
             double pivot = 1.2 * dragon.getSizeScale();
             pose.translate(0, pivot, 0);
             pose.mulPose(Axis.XP.rotationDegrees(climb * fly));

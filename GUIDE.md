@@ -1,7 +1,7 @@
-# Wild Creatures 1.11.0 (Forge 1.20.1)
+# Wild Creatures 1.12.0 (Forge 1.20.1)
 
-A creature mod that can keep growing. It has four dragons so far: the **Red Dragon**, the **Frost Dragon**, the **Lightning Dragon** and the **Sea Dragon** (see v1.9.0 to v1.11.0 at the bottom).
-Install: put `wildcreatures-1.11.0.jar` in your `mods` folder (Forge 47 for Minecraft 1.20.1), plus TerraBlender (see the Ashen Wastes section).
+A creature mod that can keep growing. It has five dragons so far: the **Red Dragon**, the **Frost Dragon**, the **Lightning Dragon**, the **Sea Dragon** and the very rare, tameable **Black Dragon** that you can ride (see v1.9.0 to v1.12.0 at the bottom).
+Install: put `wildcreatures-1.12.0.jar` in your `mods` folder (Forge 47 for Minecraft 1.20.1), plus TerraBlender (see the Ashen Wastes section).
 
 ## Red Dragon
 - Big and hostile: about 13 blocks from nose to tail and about 5 blocks tall, with a slim, athletic body covered in overlapping scales.
@@ -151,3 +151,33 @@ Config: the new `[lightning_dragon]` section in `config/wildcreatures-common.tom
 Config: the new `[sea_dragon]` section in `config/wildcreatures-common.toml` has the same settings as the other dragons, except `swimSpeed` (its top swimming speed when it chases you) instead of `canFly` and `flySpeed`. It also has `blastRadius`, `undertowSeconds` and `blastPutsOutFires`. Its `spawnRarity` works a little differently: every 30 seconds each player gets a 1 in `spawnRarity` chance of a Sea Dragon turning up nearby (4 means about one every two minutes; 0 turns them off). The biomes it spawns in are listed in `data/wildcreatures/tags/worldgen/biome/sea_dragon_habitat.json`.
 
 Why it has its own spawner: normal mob spawning gives every kind of monster a share of one limit, and in an ocean the zombies, skeletons and creepers in the caves underneath always use it up first, so a Sea Dragon never got a turn. `world/SeaDragonSpawner.java` spawns it on its own timer instead. A future sea creature can reuse the same idea.
+
+## The Black Dragon (v1.12.0)
+
+- Jet black with a faint violet sheen, and glowing violet cracks running over its body like embers under black rock. They glow in the dark, along with its violet eyes. Violet tips on its spikes and horns, and dark violet wings.
+- **Extremely rare.** It lives alone on the highest mountain peaks (jagged peaks, frozen peaks and stony peaks). Once a minute, each player up in the peaks has a 1 in 40 chance of one landing on a peak 24 to 48 blocks away, under open sky, so expect to explore the peaks for a good while before you see one. Only one at a time: no new one turns up while another (wild or tamed) is within 128 blocks of you. It's friendly, so it can turn up on Peaceful too, but not when the `doMobSpawning` game rule is off. A wild one leaves again once you're about 100 blocks away.
+- **Friendly.** It leaves players, villagers and animals alone, and only fights back if you hurt it. Iron golems and snow golems leave it alone too.
+- **Taming:** right-click it with raw or cooked meat or fish. Each one has a 1 in 3 chance of winning it over: smoke means not yet, hearts mean it trusts you now.
+- **A tamed Black Dragon:**
+  - follows you around, and flies after you when you fly, ride off or get far ahead. If you get more than 64 blocks away it catches up by turning up next to you;
+  - fights whatever attacks you and whatever you attack, but never you, your pets or your other dragons;
+  - sneak and right-click it to make it stay where it is (and again to make it follow). Before it has a saddle, a plain right-click does this too;
+  - feed it meat or fish to heal it;
+  - never despawns, and you get a message if it dies.
+- **Saddle:** right-click it with a normal saddle. A leather seat with a gold-trimmed purple saddle cloth and stirrups appears on its back. The saddle drops if it dies.
+- **Riding:** right-click it with an empty hand (or anything that isn't food or a saddle) to climb on. Only you, its owner, can ride it.
+  - W, A, S, D walk and turn on the ground. It turns to face where you look.
+  - **Space** takes off, and climbs while you hold it.
+  - In the air it flies where you look: look up to climb and down to dive (it stays level unless you look well up or down). Let go of everything and it glides slowly down.
+  - **Shift** dives. It doesn't throw you off up there. Once it has landed, Shift gets you off as normal.
+  - It lands by itself when it touches the ground.
+  - If you get off high up, you get Slow Falling so you float down safely.
+  - Climbing on switches you to the view from behind, with the camera pulled back so you see the whole dragon. F5 still changes the view, and getting off puts your old view back.
+- **Shadow flame:** left-click while riding to breathe a stream of black fire at whatever you're looking at, up to 22 blocks. 8 damage about twice a second, plus **Wither II** for 4 seconds. Wither skeletons (and the Wither) shrug off the wither but still take the damage. It lasts about 2.5 seconds, then it needs about 2.5 seconds before it can breathe again. Grass and flowers it lands on wither away: plants crumble (some leave a dead bush) and grass, podzol, mycelium and moss turn to bare dirt (needs `mobGriefing`). The Black Dragon can't be withered itself. A wild one uses its breath when it fights back.
+- **Bite:** 18 damage (9 hearts).
+- 260 health and 14 armor, the toughest dragon so far. Same sizes as the others: small (160 health) and giant (480 health).
+- Drops 3 to 6 **Black Dragon Scales** (more with Looting), lots of XP, and the same rare Dragon Essence chance as the other dragons. The scales aren't in any recipe yet.
+- A deeper voice than the other dragons, and a hollow, roaring rush of a breath sound.
+- Spawn egg in the Wild Creatures creative tab.
+
+Config: the new `[black_dragon]` section has the usual dragon settings plus `tameChancePercent` (the chance each piece of food tames it, 33 by default), `riddenFlySpeed` (its top speed in the air with you on it), `witherSeconds` and `flameWithersPlants`. `spawnRarity` is the 1 in N chance per player per minute (0 turns them off). The biomes are listed in `data/wildcreatures/tags/worldgen/biome/black_dragon_habitat.json`.

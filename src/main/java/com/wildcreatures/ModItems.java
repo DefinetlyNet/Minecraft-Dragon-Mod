@@ -45,6 +45,11 @@ public final class ModItems {
     public static final RegistryObject<Item> SEA_DRAGON_SCALE = ITEMS.register("sea_dragon_scale",
             () -> new Item(new Item.Properties().rarity(Rarity.UNCOMMON)));
 
+    public static final RegistryObject<Item> BLACK_DRAGON_SPAWN_EGG = ITEMS.register("black_dragon_spawn_egg",
+            () -> new ForgeSpawnEggItem(ModEntities.BLACK_DRAGON, 0x15121A, 0x8A4FE0, new Item.Properties()));
+    public static final RegistryObject<Item> BLACK_DRAGON_SCALE = ITEMS.register("black_dragon_scale",
+            () -> new Item(new Item.Properties().rarity(Rarity.RARE)));
+
     public static final RegistryObject<Item> BURNT_STICK = ITEMS.register("burnt_stick", () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> BURNT_OAK_DOOR = ITEMS.register("burnt_oak_door",
             () -> new DoubleHighBlockItem(ModBlocks.BURNT_OAK_DOOR.get(), new Item.Properties()));

@@ -1,5 +1,6 @@
 """Synthesises the dragons' sounds (roars, growl, hurt, death, bite, fire breath,
-wing flap, footstep, the Frost Dragon's icy breath, the Lightning Dragon's call and the Sea Dragon's water blast)
+wing flap, footstep, the Frost Dragon's icy breath, the Lightning Dragon's call, the Sea Dragon's water blast
+and the Black Dragon's shadow flame)
 and writes them as mono .ogg files.
 
 Run from the project root:  python3 tools/make_sounds.py   (needs numpy and ffmpeg)
@@ -270,9 +271,30 @@ def sea_blast():
     return x * whoosh * envelope(n, 0.03, 0.6)
 
 
+def shadow_breath():
+    """The Black Dragon's shadow flame: a hollow, rushing roar of dark fire over a low, uneasy drone (two notes a
+    semitone apart, beating against each other), with a hiss of whispers riding on top."""
+    dur = 2.7
+    t = t_axis(dur)
+    n = len(t)
+    rush = lowpass(rng.standard_normal(n), 1100, order=1) * (0.75 + 0.25 * smooth_noise(n, 10))
+    hollow = formants(rng.standard_normal(n), ((180, 70, 1.2), (420, 120, 0.9), (900, 200, 0.5))) * 0.9
+    drone = np.zeros(n)
+    for f, a in ((55.0, 1.0), (58.3, 0.8), (110.0, 0.35), (116.5, 0.3), (165.0, 0.12)):
+        drone += a * np.sin(2 * np.pi * f * t + 2 * smooth_noise(n, 1.5))
+    drone *= 0.55 * (0.8 + 0.2 * np.sin(2 * np.pi * 3.3 * t))
+    whisper = bandpass(rng.standard_normal(n), 2200, 6500) * 0.16 * (0.5 + 0.5 * np.abs(smooth_noise(n, 30)))
+    voice = roar(dur, 50, rise=0.12, fall=0.25, growl_hz=19, breath=0.9, attack=0.25, release=0.6,
+                 throat=((200, 90, 1.2), (470, 160, 1.0), (980, 260, 0.45))) * 0.4
+    x = rush + hollow + drone + whisper + voice
+    x = np.tanh(1.6 * x / (np.max(np.abs(x)) + 1e-9))               # a little grit
+    whoosh = 1 + 0.75 * np.exp(-t / 0.2)                           # burst as the flame comes out
+    return x * whoosh * envelope(n, 0.05, 0.6)
+
+
 # python3 tools/make_sounds.py              -> every sound
-# python3 tools/make_sounds.py frost        -> only the Frost Dragon's (same for red, lightning, sea)
-which = sys.argv[1:] or ["red", "frost", "lightning", "sea"]
+# python3 tools/make_sounds.py frost        -> only the Frost Dragon's (same for red, lightning, sea, black)
+which = sys.argv[1:] or ["red", "frost", "lightning", "sea", "black"]
 if "red" in which:
     os.makedirs(OUT, exist_ok=True)
     save("roar1", roar(2.6, 78))
@@ -302,3 +324,8 @@ if "sea" in which:
     os.makedirs(SEA_OUT, exist_ok=True)
     rng = np.random.default_rng(41)
     save("blast", sea_blast(), out=SEA_OUT)
+if "black" in which:
+    BLACK_OUT = "src/main/resources/assets/wildcreatures/sounds/black_dragon"
+    os.makedirs(BLACK_OUT, exist_ok=True)
+    rng = np.random.default_rng(53)
+    save("breath", shadow_breath(), out=BLACK_OUT)

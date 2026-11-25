@@ -190,9 +190,12 @@ def build_model(kind):
         box(-5.5, -4.5, 6, 0.5, 7, 7), box(5, -4.5, 6, 0.5, 7, 7),           # haunches
     ] + (fin(-7, -15, 14.5, ((-15, 1.0), (-10, 3.25), (-5, 4.25), (0, 3.5), (5, 3.25), (10, 2.5), (14.5, 1.75)),
              rays=(-11, -7, -3, 1, 5, 9, 12.5), dip=0.7) if sea else
-         [b for z, hgt in ((-14.5, 2.2), (-11, 2.8), (-7.5, 3.0), (-4, 2.8), (-0.5, 2.5),
-                           (3, 2.3), (6.5, 2.1), (10, 1.8), (13, 1.5))
+         [b for z, hgt in ((-14.5, 2.2), (3, 2.3), (6.5, 2.1), (10, 1.8), (13, 1.5))
           for b in spikes(-7, [z], hgt)]))
+    if not sea:
+        # the spikes where a saddle goes are a part of their own, so the model can hide them under the saddle
+        part("saddle_spikes", "body", (0, 0, 0), boxes=[
+            b for z, hgt in ((-11, 2.8), (-7.5, 3.0), (-4, 2.8), (-0.5, 2.5)) for b in spikes(-7, [z], hgt)])
 
     # ---------------- neck and head ----------------
     part("neck1", "body", (0, -2.5, -17), (-0.7, 0, 0), [
@@ -375,6 +378,20 @@ VARIANTS = [
          # two rows of glowing spots along each side, like a deep-sea fish
          markings=dict(kind="spots", color=(150, 255, 236), glow=(60, 220, 210)),
          item_gradient=[(20, (4, 26, 40)), (70, (16, 84, 104)), (120, (40, 150, 156)), (190, (190, 240, 222))]),
+    dict(name="black_dragon",
+         # jet black back fading to a dark slate-violet belly, with a violet sheen along the scale edges
+         stops=[(0.0, (10, 9, 15)), (0.22, (26, 21, 38)), (0.4, (16, 14, 23)), (0.7, (20, 17, 29)), (0.86, (34, 28, 48)), (1.0, (52, 43, 70))],
+         dorsal=(9, 8, 13), flank=(16, 14, 23), flank2=(26, 22, 38), belly=(58, 48, 78),
+         spike_base=(14, 12, 20), spike_tip=(132, 78, 200), ridge=0.8,
+         horn_base=(36, 32, 46), horn_mid=(18, 16, 26), horn_tip=(120, 70, 190),
+         membrane_root=(14, 9, 24), membrane_edge=(58, 30, 92), vein=(116, 64, 186),
+         strut=(12, 10, 18), leg_dark=(5, 4, 8),
+         eye=(236, 190, 255), eye_rim=(150, 50, 235), pupil=(18, 0, 28),
+         claw=(14, 12, 18), tooth=(226, 222, 210), mouth=(46, 14, 44), tongue=(108, 40, 98), nostril=(5, 3, 8),
+         scale_edge=0.0, rime=0.0, sheen=((96, 60, 150), 0.25),
+         # faint violet cracks low on the flanks, glowing like shadow fire under the scales
+         markings=dict(kind="veins", color=(150, 84, 230), glow=(120, 50, 210)),
+         item_gradient=[(20, (6, 5, 10)), (70, (24, 19, 36)), (120, (58, 40, 90)), (190, (150, 104, 222))]),
 ]
 
 BODY_LIKE = ("body", "neck1", "neck2", "head", "jaw", "tail1", "tail2", "tail3", "tail4", "tail_tip")
@@ -553,6 +570,29 @@ def spot_rows(model, tb, height):
     return out * smoothstep(0.1, 0.25, tb) * (1.0 - smoothstep(0.7, 0.8, tb))
 
 
+def shadow_veins(model, tb, height):
+    """0..1 strength of thin glowing cracks, like shadow fire burning through the scales: the edges of 3D cells
+    (so the cracks join up across faces and parts), strongest low on the flanks and fading out toward the back."""
+    cell = 4.2
+    p = model / cell
+    base = np.floor(p)
+    d1 = np.full(p.shape[1:], 9.0)
+    d2 = np.full(p.shape[1:], 9.0)
+    for dx in (-1, 0, 1):
+        for dy in (-1, 0, 1):
+            for dz in (-1, 0, 1):
+                cx, cy, cz = base[0] + dx, base[1] + dy, base[2] + dz
+                fx = cx + 0.15 + 0.7 * hash3(cx, cy, cz, 11)
+                fy = cy + 0.15 + 0.7 * hash3(cx, cy, cz, 12)
+                fz = cz + 0.15 + 0.7 * hash3(cx, cy, cz, 13)
+                d = np.sqrt((p[0] - fx) ** 2 + (p[1] - fy) ** 2 + (p[2] - fz) ** 2)
+                d2 = np.where(d < d1, d1, np.minimum(d2, d))
+                d1 = np.minimum(d1, d)
+    crack = 1.0 - smoothstep(0.0, 0.07, d2 - d1)
+    band = smoothstep(0.3, 0.62, tb) * (1.0 - smoothstep(0.9, 1.0, tb))
+    return crack * band
+
+
 def paint_variant(v):
     m = MODELS[v.get("model", "winged")]
     TW, TH = m["tw"], m["th"]
@@ -561,8 +601,9 @@ def paint_variant(v):
     glow = np.zeros((TH * RES, TW * RES, 4))
     stops = v.get("stops") or [(0.0, v["dorsal"]), (0.38, v["flank"]), (0.72, v["flank2"]), (1.0, v["belly"])]
     rng = np.random.default_rng(11)
+    body_boxes = next(p[4] for p in m["parts"] if p[0] == "body")
     for (name, parent, pivot, rot, boxes) in m["parts"]:
-        ytop, ybot = core_range(boxes)
+        ytop, ybot = core_range(body_boxes if name == "saddle_spikes" else boxes)
         rmat, tvec = m["pose"][name]
         inner_wing = name in ("wing_r", "wing_l")
         wing_len = WING_IN if inner_wing else WING_OUT
@@ -613,6 +654,11 @@ def paint_variant(v):
                         JJ = (FH - 1 - J) if face == "top" else J
                         shade, edge = scale_pattern(I, JJ, cw)
                         k = k * (1.0 + 0.06 * shade + v["scale_edge"] * edge)
+                        if v.get("sheen"):
+                            # a coloured gleam along the scale edges, like oil on black
+                            sheen_col, sheen_amt = v["sheen"]
+                            gleam = sheen_amt * edge * (0.65 + 0.35 * vnoise(model, 4.0, 3))
+                            col = col + (np.array(sheen_col, float) - col) * gleam[..., None]
                         if v["rime"] and not is_limb(name) and name != "jaw":
                             up = 1.0 - np.clip(body_t(name, ytop, ybot, py, face) / 0.45, 0, 1)
                             col = col + (255 - col) * (v["rime"] * edge * up)[..., None]
@@ -691,7 +737,7 @@ def paint_variant(v):
                     raise ValueError(mat)
                 mk = None
                 if v.get("markings") and tb is not None:
-                    pattern = spot_rows if v["markings"].get("kind") == "spots" else lightning_lines
+                    pattern = {"spots": spot_rows, "veins": shadow_veins}.get(v["markings"].get("kind"), lightning_lines)
                     mk = pattern(model, tb, ybot - ytop)
                     col = col + (np.array(v["markings"]["color"], float) - col) * (0.85 * mk)[..., None]
                 col = col * np.asarray(k)[..., None] + rng.normal(0, 1.2, col.shape)
