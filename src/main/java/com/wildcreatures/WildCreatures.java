@@ -42,6 +42,8 @@ public class WildCreatures {
                 out.accept(ModItems.FROST_DRAGON_SCALE.get());
                 out.accept(ModItems.LIGHTNING_DRAGON_SPAWN_EGG.get());
                 out.accept(ModItems.LIGHTNING_DRAGON_SCALE.get());
+                out.accept(ModItems.SEA_DRAGON_SPAWN_EGG.get());
+                out.accept(ModItems.SEA_DRAGON_SCALE.get());
                 out.accept(ModItems.DRAGON_ESSENCE.get());
                 out.accept(ModItems.DRAGON_SWORD.get());
                 out.accept(ModItems.DRAGON_PICKAXE.get());
@@ -69,6 +71,7 @@ public class WildCreatures {
         ModWorldgen.STRUCTURE_PIECES.register(modBus);
         modBus.addListener(this::commonSetup);
         ModSounds.SOUNDS.register(modBus);
+        ModEffects.EFFECTS.register(modBus);
         TABS.register(modBus);
         modBus.addListener(this::addToVanillaTabs);
         // Every number lives in config/wildcreatures-common.toml after the first launch.
@@ -89,11 +92,13 @@ public class WildCreatures {
             event.accept(ModItems.RED_DRAGON_SPAWN_EGG);
             event.accept(ModItems.FROST_DRAGON_SPAWN_EGG);
             event.accept(ModItems.LIGHTNING_DRAGON_SPAWN_EGG);
+            event.accept(ModItems.SEA_DRAGON_SPAWN_EGG);
         }
         if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
             event.accept(ModItems.RED_DRAGON_SCALE);
             event.accept(ModItems.FROST_DRAGON_SCALE);
             event.accept(ModItems.LIGHTNING_DRAGON_SCALE);
+            event.accept(ModItems.SEA_DRAGON_SCALE);
         }
         if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS) {
             event.accept(ModBlocks.BURNT_OAK_LOG);

@@ -4,6 +4,7 @@ import com.wildcreatures.entity.AbstractDragon;
 import com.wildcreatures.entity.FrostDragon;
 import com.wildcreatures.entity.LightningDragon;
 import com.wildcreatures.entity.RedDragon;
+import com.wildcreatures.entity.SeaDragon;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.SpawnPlacements;
@@ -25,6 +26,7 @@ public final class ModEntities {
     public static final RegistryObject<EntityType<RedDragon>> RED_DRAGON = dragon("red_dragon", RedDragon::new, true);
     public static final RegistryObject<EntityType<FrostDragon>> FROST_DRAGON = dragon("frost_dragon", FrostDragon::new, false);
     public static final RegistryObject<EntityType<LightningDragon>> LIGHTNING_DRAGON = dragon("lightning_dragon", LightningDragon::new, false);
+    public static final RegistryObject<EntityType<SeaDragon>> SEA_DRAGON = dragon("sea_dragon", SeaDragon::new, false);
 
     /** Registers one kind of dragon. They all share the same body size; fire-proof ones don't burn in fire or lava. */
     private static <T extends AbstractDragon> RegistryObject<EntityType<T>> dragon(String name, EntityType.EntityFactory<T> factory, boolean fireProof) {
@@ -42,6 +44,7 @@ public final class ModEntities {
         event.put(RED_DRAGON.get(), AbstractDragon.createAttributes().build());
         event.put(FROST_DRAGON.get(), AbstractDragon.createAttributes().build());
         event.put(LIGHTNING_DRAGON.get(), AbstractDragon.createAttributes().build());
+        event.put(SEA_DRAGON.get(), AbstractDragon.createAttributes().build());
     }
 
     @SubscribeEvent
@@ -53,5 +56,8 @@ public final class ModEntities {
         // much more likely to turn up during a thunderstorm
         event.register(LIGHTNING_DRAGON.get(), SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 AbstractDragon.spawnRules(CreatureConfig.LIGHTNING, 4), SpawnPlacementRegisterEvent.Operation.REPLACE);
+        // its natural spawns come from world/SeaDragonSpawner; these rules cover mob spawners and the like
+        event.register(SEA_DRAGON.get(), SpawnPlacements.Type.IN_WATER, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                SeaDragon.spawnRules(), SpawnPlacementRegisterEvent.Operation.REPLACE);
     }
 }

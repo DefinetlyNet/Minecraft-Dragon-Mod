@@ -23,6 +23,7 @@ public final class ClientSetup {
     @SubscribeEvent
     public static void layers(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(DragonRenderer.LAYER, DragonLayer::create);
+        event.registerLayerDefinition(DragonRenderer.SEA_LAYER, DragonLayer::createSea);
         event.registerLayerDefinition(DragonArmorModels.HELMET, DragonArmorLayers::createHelmet);
         event.registerLayerDefinition(DragonShieldRenderer.LAYER, DragonShieldRenderer::createLayer);
     }
@@ -32,6 +33,7 @@ public final class ClientSetup {
         event.registerEntityRenderer(ModEntities.RED_DRAGON.get(), ctx -> new DragonRenderer<>(ctx, "red_dragon"));
         event.registerEntityRenderer(ModEntities.FROST_DRAGON.get(), ctx -> new DragonRenderer<>(ctx, "frost_dragon"));
         event.registerEntityRenderer(ModEntities.LIGHTNING_DRAGON.get(), ctx -> new DragonRenderer<>(ctx, "lightning_dragon"));
+        event.registerEntityRenderer(ModEntities.SEA_DRAGON.get(), ctx -> new DragonRenderer<>(ctx, "sea_dragon", DragonRenderer.SEA_LAYER));
         event.registerBlockEntityRenderer(ModBlockEntities.SIGN.get(), SignRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.HANGING_SIGN.get(), HangingSignRenderer::new);
     }

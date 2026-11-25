@@ -7,10 +7,11 @@ import net.minecraftforge.common.ForgeConfigSpec;
  * (health, sizes, bite, breath, flying, spawning), plus three that depend on what its breath does:
  * a radius, a number of seconds, and whether the breath changes blocks. Each type names those three
  * itself (the Red Dragon calls them fireRadius, burnSeconds and breathSetsBlocksOnFire).
+ * Sea creatures get a swimSpeed setting instead of canFly and flySpeed (those two are null for them).
  */
 public final class DragonStats {
     public final ForgeConfigSpec.DoubleValue health, smallHealth, giantHealth, armor, biteDamage,
-            breathDamage, breathRange, effectRadius, flySpeed;
+            breathDamage, breathRange, effectRadius, flySpeed, swimSpeed;
     public final ForgeConfigSpec.IntValue smallChance, giantChance, biteCooldown, breathTicks, breathCooldown,
             effectSeconds, spawnRarity;
     public final ForgeConfigSpec.BooleanValue breathAffectsBlocks, canFly;
@@ -33,12 +34,24 @@ public final class DragonStats {
         effectRadius = b.comment(d.radiusComment).defineInRange(d.radiusKey, d.radius, 0.0, 8.0);
         effectSeconds = b.comment(d.secondsComment).defineInRange(d.secondsKey, d.seconds, 0, 60);
         breathAffectsBlocks = b.comment(d.blocksComment).define(d.blocksKey, true);
-        canFly = b.comment("Whether the dragon can take off and fly").define("canFly", d.canFly);
-        flySpeed = b.comment("Top flying speed in blocks per tick (a sprinting player is about 0.28)").defineInRange("flySpeed", d.flySpeed, 0.05, 2.0);
-        spawnRarity = b.comment("Natural spawns (in " + d.home + ") only succeed 1 time in this many tries. Higher = rarer. 0 = never spawn naturally.")
+        if (d.swimSpeed > 0) {
+            canFly = null;
+            flySpeed = null;
+            swimSpeed = b.comment("Top swimming speed in blocks per tick, when it chases something (a boat at full speed is about 0.4)")
+                    .defineInRange("swimSpeed", d.swimSpeed, 0.05, 2.0);
+        } else {
+            canFly = b.comment("Whether the dragon can take off and fly").define("canFly", d.canFly);
+            flySpeed = b.comment("Top flying speed in blocks per tick (a sprinting player is about 0.28)").defineInRange("flySpeed", d.flySpeed, 0.05, 2.0);
+            swimSpeed = null;
+        }
+        spawnRarity = b.comment(d.spawnComment != null ? d.spawnComment
+                        : "Natural spawns (in " + d.home + ") only succeed 1 time in this many tries. Higher = rarer. 0 = never spawn naturally.")
                 .defineInRange("spawnRarity", d.spawnRarity, 0, 10000);
         b.pop();
     }
+
+    /** Whether this kind of dragon may fly (sea creatures never do). */
+    public boolean canFly() { return canFly != null && canFly.get(); }
 
     /** Starting values for a dragon type's config section. Anything not set keeps the Red Dragon's numbers. */
     public static final class Defaults {
@@ -55,8 +68,9 @@ public final class DragonStats {
         private int seconds = 8;
         private String blocksKey = "breathAffectsBlocks", blocksComment = "Whether the breath changes blocks (also needs the mobGriefing game rule on)";
         private boolean canFly = true;
-        private double flySpeed = 0.45;
+        private double flySpeed = 0.45, swimSpeed = 0;
         private int spawnRarity = 4;
+        private String spawnComment;
 
         /**
          * @param section config section name, e.g. "red_dragon"
@@ -86,6 +100,10 @@ public final class DragonStats {
         public Defaults affectsBlocks(String key, String comment) { blocksKey = key; blocksComment = comment; return this; }
         public Defaults flying(boolean can, double speed) { canFly = can; flySpeed = speed; return this; }
         public Defaults spawnRarity(int oneIn) { spawnRarity = oneIn; return this; }
+        /** Replaces the whole spawnRarity comment, for a dragon that doesn't spawn the usual way. */
+        public Defaults spawnComment(String comment) { spawnComment = comment; return this; }
+        /** A sea creature: it swims instead of flying, with this top speed when chasing (blocks per tick). */
+        public Defaults swimming(double speed) { swimSpeed = speed; canFly = false; return this; }
 
         public DragonStats build(ForgeConfigSpec.Builder b) { return new DragonStats(b, this); }
     }

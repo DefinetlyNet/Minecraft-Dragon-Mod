@@ -31,9 +31,10 @@ def part(name, parent, pivot, rot=(0, 0, 0), boxes=()):
     PARTS.append((name, parent, pivot, rot, list(boxes)))
 
 
-def box(x, y, z, w, h, d, mat="scale", **faces):
-    """faces may override a face's material: top/bottom/front/back/left/right."""
-    return dict(o=(x, y, z), s=(q(w), q(h), q(d)), mat=mat, faces=faces)
+def box(x, y, z, w, h, d, mat="scale", fin=None, **faces):
+    """faces may override a face's material: top/bottom/front/back/left/right.
+    fin = (axis, base, span) for fin boxes: the fin grows along that axis (0 x, 1 y, 2 z) away from base."""
+    return dict(o=(x, y, z), s=(q(w), q(h), q(d)), mat=mat, faces=faces, fin=fin)
 
 
 def mirror_box(b):
@@ -41,7 +42,7 @@ def mirror_box(b):
     faces = dict(b["faces"])
     if "left" in faces or "right" in faces:
         faces["left"], faces["right"] = b["faces"].get("right"), b["faces"].get("left")
-    return dict(o=(-(x + w), y, z), s=(w, h, d), mat=b["mat"], faces={k: v for k, v in faces.items() if v})
+    return dict(o=(-(x + w), y, z), s=(w, h, d), mat=b["mat"], faces={k: v for k, v in faces.items() if v}, fin=b.get("fin"))
 
 
 def sided(name_r, parent, pivot, rot, boxes):
@@ -62,68 +63,64 @@ def spikes(top, zs, height, width=1.2):
     return out
 
 
-# ---------------- body ----------------
-# A deep ribcage that narrows to a tucked-up waist and lean hips.
-part("body", "root", (0, 5.5, 0), boxes=[
-    box(-5.5, -6, -16, 11, 12, 13),                                  # ribcage
-    box(-4.5, -5, -18, 9, 10, 2),                                    # breastbone
-    box(-4.5, -5.5, -3, 9, 9.5, 8.5),                                # waist
-    box(-5, -6, 5, 10, 9, 9),                                        # hips
-    box(-4, -5, 14, 8, 7, 1.5),                                      # rump, narrowing into the tail
-    box(-2, -7, -15, 4, 1, 29, "ridge"),                             # spine
-    box(-6, -4.5, -15, 0.5, 7, 7.5), box(5.5, -4.5, -15, 0.5, 7, 7.5),   # shoulder muscles
-    box(-5.5, -4.5, 6, 0.5, 7, 7), box(5, -4.5, 6, 0.5, 7, 7),           # haunches
-] + [b for z, hgt in ((-14.5, 2.2), (-11, 2.8), (-7.5, 3.0), (-4, 2.8), (-0.5, 2.5),
-                      (3, 2.3), (6.5, 2.1), (10, 1.8), (13, 1.5))
-     for b in spikes(-7, [z], hgt)])
+def fin(top, z0, z1, heights, rays=(), strip=1.5, dip=0.6):
+    """A thin fin standing up from a surface at y = top, running from z0 to z1 (Sea Dragon).
+    heights = ((z, h), ...) control points for its height; the top edge scallops down between the stiff rays."""
+    zs, hs = zip(*heights)
+    span = max(hs)
+    joints = (z0,) + tuple(rays) + (z1,)
 
-# ---------------- neck and head ----------------
-part("neck1", "body", (0, -2.5, -17), (-0.7, 0, 0), [
-    box(-3.5, -3.5, -12, 7, 7, 13),
-    box(-1.5, -4, -11, 3, 0.5, 11, "ridge"),
-] + spikes(-4, (-10, -6.5, -3), 1.8, 1.0))
-part("neck2", "neck1", (0, 0, -11.5), (0.25, 0, 0), [
-    box(-3, -3, -12, 6, 6, 13),
-    box(-1.25, -3.5, -11, 2.5, 0.5, 11, "ridge"),
-] + spikes(-3.5, (-10, -6.5, -3), 1.5, 0.9))
-part("head", "neck2", (0, 0, -11.5), (0.45, 0, 0), [
-    box(-3.5, -3.5, -7, 7, 5.5, 8),                                  # skull
-    box(-2.5, -2.5, -16, 5, 3.5, 9.5, bottom="mouth"),               # snout
-    box(-2, -3, -15.5, 4, 0.5, 8.5, "ridge"),                        # snout ridge
-    box(-4, -4.5, -7, 2.75, 1.25, 4.5, "ridge"), box(1.25, -4.5, -7, 2.75, 1.25, 4.5, "ridge"),  # brows
-    box(-3.75, -3, -6, 0.5, 1.5, 2.5, "eye"), box(3.25, -3, -6, 0.5, 1.5, 2.5, "eye"),
-    box(-2, -3, -16.25, 1.25, 1, 1.5, "ridge"), box(0.75, -3, -16.25, 1.25, 1, 1.5, "ridge"),     # nostril rims
-    box(-1.75, -2.5, -16.5, 0.75, 0.5, 0.5, "nostril"), box(1, -2.5, -16.5, 0.75, 0.5, 0.5, "nostril"),
-    box(-0.5, -3.75, -14.5, 1, 0.75, 2.5, "bone"),                   # little nose horn
-    box(-4.25, -1, -2.5, 0.75, 1.5, 4, "bone"), box(3.5, -1, -2.5, 0.75, 1.5, 4, "bone"),         # cheek spurs
-    box(-3.75, -3, 0.5, 0.5, 3.5, 3, "membrane"), box(3.25, -3, 0.5, 0.5, 3.5, 3, "membrane"),    # ear frills
-] + [box(x, 1, z, 0.75, 1.25, 0.75, "tooth") for z in (-14.5, -12.5, -10.5, -8.5) for x in (-2.25, 1.5)]
-  + [box(x, 1, -15.75, 0.75, 2, 0.75, "tooth") for x in (-1.75, 1)])                              # fangs
-part("jaw", "head", (0, 1, -6.5), (0.05, 0, 0), [
-    box(-2.25, 0, -9.5, 4.5, 1.75, 10, top="mouth"),
-    box(-1.5, -0.5, -8, 3, 0.5, 6.5, "tongue"),
-    box(-0.5, 1.5, -3, 1, 1.25, 2.5, "spike"),                       # chin spike
-] + [box(x, -1, z, 0.75, 1, 0.75, "tooth") for z in (-9, -7, -5, -3) for x in (-2, 1.25)])
-sided("horn_r", "head", (2.25, -3.25, -1), (0.55, 0.22, 0), [box(-0.75, -0.75, 0, 1.5, 1.5, 9, "bone")])
-sided("horn_tip_r", "horn_r", (0, 0, 8.5), (0.4, 0, 0), [box(-0.5, -0.5, 0, 1, 1, 7, "horntip")])
-sided("horn2_r", "head", (3.25, -1.5, -0.5), (0.2, 0.55, 0), [box(-0.5, -0.5, 0, 1, 1, 5, "bone")])
+    def h_at(z):
+        h = float(np.interp(z, zs, hs))
+        for a, b in zip(joints, joints[1:]):
+            if a <= z <= b:
+                h -= dip * math.sin(math.pi * (z - a) / (b - a))
+                break
+        return max(0.5, q(h))
 
-# ---------------- tail ----------------
-part("tail1", "body", (0, -2.5, 15), (-0.22, 0, 0), [
-    box(-3.75, -3.75, -1, 7.5, 7.5, 13), box(-1.5, -4.25, 0, 3, 0.5, 11, "ridge")] + spikes(-4.25, (1.5, 5.5, 9.5), 1.8, 1.0))
-part("tail2", "tail1", (0, 0, 11.5), (-0.08, 0, 0), [
-    box(-3, -3, -1, 6, 6, 13), box(-1.25, -3.5, 0, 2.5, 0.5, 11, "ridge")] + spikes(-3.5, (1.5, 5.5, 9.5), 1.5, 0.9))
-part("tail3", "tail2", (0, 0, 11.5), (0.1, 0, 0), [
-    box(-2.25, -2.25, -1, 4.5, 4.5, 13)] + spikes(-2.25, (2, 7), 1.2, 0.75))
-part("tail4", "tail3", (0, 0, 11.5), (0.12, 0, 0), [
-    box(-1.5, -1.5, -1, 3, 3, 13)] + spikes(-1.5, (3, 8), 0.9, 0.6))
-part("tail_tip", "tail4", (0, 0, 11.5), boxes=[
-    box(-1, -1, -1, 2, 2, 4),
-    box(-3.5, -0.25, 1, 7, 0.5, 3, "spike"), box(-2.5, -0.25, 4, 5, 0.5, 2.5, "spike"),
-    box(-1.5, -0.25, 6.5, 3, 0.5, 2, "spike"), box(-0.5, -0.25, 8.5, 1, 0.5, 1.5, "spike")])
+    out, z = [], z0
+    while z < z1 - 0.01:
+        ln = min(strip, z1 - z)
+        h = h_at(z + ln / 2)
+        out.append(box(-0.25, top - h, z, 0.5, h, ln, "fin", fin=(1, top, span)))
+        z += ln
+    for r in rays:
+        h = q(float(np.interp(r, zs, hs)) + 0.25)
+        out.append(box(-0.375, top - h, r - 0.375, 0.75, h, 0.75, "finray", fin=(1, top, span)))
+    return out
 
 
-# ---------------- legs (right side, mirrored to the left) ----------------
+def fluke():
+    """The Sea Dragon's tail fin: a tall, forked fin like a fish's, standing upright at the end of the tail."""
+    out, z = [], 0.0
+    while z < 11.0 - 0.01:
+        zc = z + 0.5
+        up = q(1.0 + 5.0 * (zc / 10) ** 1.5)          # top lobe, above the tail's centre line
+        dn = q(0.75 + 3.5 * (zc / 10) ** 1.5)         # bottom lobe
+        notch = q(max(0.0, zc - 7.5) * 1.1)           # the fork eats into the middle of the trailing edge
+        if notch < 0.75:
+            out.append(box(-0.25, -up, z, 0.5, up + dn, 1.0, "fin", fin=(1, 0.0, 6.0)))
+        else:
+            out.append(box(-0.25, -up, z, 0.5, up - notch, 1.0, "fin", fin=(1, 0.0, 6.0)))
+            out.append(box(-0.25, notch, z, 0.5, dn - notch, 1.0, "fin", fin=(1, 0.0, 6.0)))
+        z += 1.0
+    return out
+
+
+def frill():
+    """A fan-shaped fin behind the jaw (Sea Dragon), spread by stiff spines. Grows backward (+z)."""
+    out, z = [], 0.0
+    while z < 7.0 - 0.01:
+        zc = z + 0.5
+        hh = q(0.5 + 2.25 * math.sqrt(max(0.0, 1 - (zc / 7.25) ** 2)) - 0.3 * abs(math.sin(zc * 1.4)))
+        out.append(box(-0.25, -hh, z, 0.5, 2 * hh, 1.0, "fin", fin=(2, 0.0, 7.0)))
+        z += 1.0
+    for y, ln in ((-1.5, 5.75), (0.0, 7.0), (1.5, 5.75)):
+        out.append(box(-0.375, y - 0.375, 0.0, 0.75, 0.75, ln, "finray", fin=(2, 0.0, 7.0)))
+    return out
+
+
+# ---------------- shared pieces ----------------
 def toes(z):
     out = []
     for x in (-1.55, -0.45, 0.65):
@@ -133,24 +130,7 @@ def toes(z):
     return out
 
 
-sided("front_leg_r", "body", (5, 2.5, -11), (0.25, 0, 0), [
-    box(-2.25, -4, -2.75, 4.5, 7.5, 5.5),                            # shoulder
-    box(-2, 2.5, -2.1, 4, 4.5, 4.25)])                               # upper arm
-sided("front_shin_r", "front_leg_r", (0, 6, 0), (-0.45, 0, 0), [
-    box(-1.6, -0.5, -1.6, 3.25, 9.75, 3.25),
-    box(-0.4, 0.5, 1.5, 0.75, 1.5, 1.5, "spike")])                   # elbow spur
-sided("front_foot_r", "front_shin_r", (0, 9.38, 0), (0.2, 0, 0), [box(-1.9, 0, -2.25, 3.75, 1, 3.75)] + toes(-2.25))
-sided("hind_leg_r", "body", (4.5, 0.5, 9.5), (-0.55, 0, 0), [
-    box(-2.5, -4.5, -3.75, 5, 9, 7.5),                               # thigh
-    box(-2, 4, -2.5, 4, 4.5, 5)])
-sided("hind_shin_r", "hind_leg_r", (0, 8, 0), (1.25, 0, 0), [
-    box(-1.5, -0.5, -1.5, 3, 8.25, 3),
-    box(-0.4, -1, 1.25, 0.75, 1.5, 1.5, "spike")])                   # heel spur
-sided("hind_foot_r", "hind_shin_r", (0, 7.5, 0), (-0.85, 0, 0), [box(-1.25, -0.5, -1.25, 2.5, 5.25, 2.5)])
-sided("hind_paw_r", "hind_foot_r", (0, 4.5, 0), (0.15, 0, 0), [box(-1.9, 0, -2.25, 3.75, 1, 3.75)] + toes(-2.25))
-
-# ---------------- wings ----------------
-# The membrane is a run of thin strips; each strip's depth follows the trailing edge,
+# The wing membrane is a run of thin strips; each strip's depth follows the trailing edge,
 # which scallops in between the finger bones like a bat's.
 WING_IN, WING_OUT = 22.0, 20.0
 STRUTS_IN, STRUTS_OUT = (7.5, 15.0), (5.0, 10.0, 15.0)
@@ -177,41 +157,11 @@ def membrane(length, root, end, struts, dip, strip=1.5):
     return out
 
 
-sided("wing_r", "body", (4.5, -5.5, -11), (0, 0, 0), [
-    box(0, -1, -1, WING_IN + 0.5, 2, 2),                             # arm bone
-    box(0.5, -1.5, -0.75, 9, 0.5, 1.5, "ridge"),                     # muscle along the top
-    box(WING_IN - 1, -2.25, -1, 1.25, 1.5, 1.25, "claw"),            # thumb claw
-] + membrane(WING_IN, 21.0, 17.0, STRUTS_IN, 3.0))
-sided("wing_tip_r", "wing_r", (WING_IN, 0, 0), (0, 0, 0), [
-    box(0, -0.75, -0.75, WING_OUT, 1.5, 1.5),                        # finger bone
-    box(WING_OUT - 0.5, -1, -1, 1.25, 1.25, 1.25, "claw"),
-] + membrane(WING_OUT, 17.0, 1.5, STRUTS_OUT, 2.5))
-
-
-# ---------------- UV packing ----------------
 def footprint(b):
     w, h, d = b["s"]
     return math.ceil(2 * d + 2 * w), math.ceil(d + h)
 
 
-all_boxes = [b for p in PARTS for b in p[4]]
-order = sorted(all_boxes, key=lambda b: -footprint(b)[1])
-TW = 256
-x = y = row_h = 0
-for b in order:
-    fw, fh = footprint(b)
-    if x + fw > TW:
-        x, y, row_h = 0, y + row_h, 0
-    b["uv"] = (x, y)
-    x += fw
-    row_h = max(row_h, fh)
-TH = 1
-while TH < y + row_h:
-    TH *= 2
-print(f"texture {TW}x{TH}, {len(all_boxes)} boxes in {len(PARTS)} parts")
-
-
-# ---------------- rest pose: where every part sits in model space ----------------
 def rot_zyx(rx, ry, rz):
     cx, sx, cy, sy, cz, sz = math.cos(rx), math.sin(rx), math.cos(ry), math.sin(ry), math.cos(rz), math.sin(rz)
     rxm = np.array([[1, 0, 0], [0, cx, -sx], [0, sx, cx]])
@@ -220,23 +170,154 @@ def rot_zyx(rx, ry, rz):
     return rzm @ rym @ rxm
 
 
-POSE = {"root": (np.eye(3), np.zeros(3))}
-for name, parent, pivot, rot, _ in PARTS:
-    pr, pt = POSE[parent]
-    POSE[name] = (pr @ rot_zyx(*rot), pt + pr @ np.array(pivot, dtype=float))
+def build_model(kind):
+    """Builds one body: "winged" (the shared dragon body) or "sea" (the same skeleton, so the same animations,
+    but a fin along the back instead of spikes, a forked tail fin and fan-shaped frills behind the jaw)."""
+    global PARTS
+    PARTS = []
+    sea = kind == "sea"
+
+    # ---------------- body ----------------
+    # A deep ribcage that narrows to a tucked-up waist and lean hips.
+    part("body", "root", (0, 5.5, 0), boxes=[
+        box(-5.5, -6, -16, 11, 12, 13),                                  # ribcage
+        box(-4.5, -5, -18, 9, 10, 2),                                    # breastbone
+        box(-4.5, -5.5, -3, 9, 9.5, 8.5),                                # waist
+        box(-5, -6, 5, 10, 9, 9),                                        # hips
+        box(-4, -5, 14, 8, 7, 1.5),                                      # rump, narrowing into the tail
+        box(-2, -7, -15, 4, 1, 29, "ridge"),                             # spine
+        box(-6, -4.5, -15, 0.5, 7, 7.5), box(5.5, -4.5, -15, 0.5, 7, 7.5),   # shoulder muscles
+        box(-5.5, -4.5, 6, 0.5, 7, 7), box(5, -4.5, 6, 0.5, 7, 7),           # haunches
+    ] + (fin(-7, -15, 14.5, ((-15, 1.0), (-10, 3.25), (-5, 4.25), (0, 3.5), (5, 3.25), (10, 2.5), (14.5, 1.75)),
+             rays=(-11, -7, -3, 1, 5, 9, 12.5), dip=0.7) if sea else
+         [b for z, hgt in ((-14.5, 2.2), (-11, 2.8), (-7.5, 3.0), (-4, 2.8), (-0.5, 2.5),
+                           (3, 2.3), (6.5, 2.1), (10, 1.8), (13, 1.5))
+          for b in spikes(-7, [z], hgt)]))
+
+    # ---------------- neck and head ----------------
+    part("neck1", "body", (0, -2.5, -17), (-0.7, 0, 0), [
+        box(-3.5, -3.5, -12, 7, 7, 13),
+        box(-1.5, -4, -11, 3, 0.5, 11, "ridge"),
+    ] + (fin(-4, -11.5, 0.5, ((-11.5, 1.25), (0.5, 2.0)), rays=(-8, -4)) if sea else spikes(-4, (-10, -6.5, -3), 1.8, 1.0)))
+    part("neck2", "neck1", (0, 0, -11.5), (0.25, 0, 0), [
+        box(-3, -3, -12, 6, 6, 13),
+        box(-1.25, -3.5, -11, 2.5, 0.5, 11, "ridge"),
+    ] + (fin(-3.5, -11, 0.5, ((-11, 0.75), (0.5, 1.5)), rays=(-7.5, -3.5)) if sea else spikes(-3.5, (-10, -6.5, -3), 1.5, 0.9)))
+    ear_frills = [] if sea else [
+        box(-3.75, -3, 0.5, 0.5, 3.5, 3, "membrane"), box(3.25, -3, 0.5, 0.5, 3.5, 3, "membrane")]   # ear frills
+    part("head", "neck2", (0, 0, -11.5), (0.45, 0, 0), [
+        box(-3.5, -3.5, -7, 7, 5.5, 8),                                  # skull
+        box(-2.5, -2.5, -16, 5, 3.5, 9.5, bottom="mouth"),               # snout
+        box(-2, -3, -15.5, 4, 0.5, 8.5, "ridge"),                        # snout ridge
+        box(-4, -4.5, -7, 2.75, 1.25, 4.5, "ridge"), box(1.25, -4.5, -7, 2.75, 1.25, 4.5, "ridge"),  # brows
+        box(-3.75, -3, -6, 0.5, 1.5, 2.5, "eye"), box(3.25, -3, -6, 0.5, 1.5, 2.5, "eye"),
+        box(-2, -3, -16.25, 1.25, 1, 1.5, "ridge"), box(0.75, -3, -16.25, 1.25, 1, 1.5, "ridge"),     # nostril rims
+        box(-1.75, -2.5, -16.5, 0.75, 0.5, 0.5, "nostril"), box(1, -2.5, -16.5, 0.75, 0.5, 0.5, "nostril"),
+        box(-0.5, -3.75, -14.5, 1, 0.75, 2.5, "bone"),                   # little nose horn
+        box(-4.25, -1, -2.5, 0.75, 1.5, 4, "bone"), box(3.5, -1, -2.5, 0.75, 1.5, 4, "bone"),         # cheek spurs
+    ] + ear_frills
+      + [box(x, 1, z, 0.75, 1.25, 0.75, "tooth") for z in (-14.5, -12.5, -10.5, -8.5) for x in (-2.25, 1.5)]
+      + [box(x, 1, -15.75, 0.75, 2, 0.75, "tooth") for x in (-1.75, 1)])                              # fangs
+    part("jaw", "head", (0, 1, -6.5), (0.05, 0, 0), [
+        box(-2.25, 0, -9.5, 4.5, 1.75, 10, top="mouth"),
+        box(-1.5, -0.5, -8, 3, 0.5, 6.5, "tongue"),
+        box(-0.5, 1.5, -3, 1, 1.25, 2.5, "spike"),                       # chin spike
+    ] + [box(x, -1, z, 0.75, 1, 0.75, "tooth") for z in (-9, -7, -5, -3) for x in (-2, 1.25)])
+    if sea:
+        # long swept-back spines instead of horns, and a fan-shaped fin behind each jaw hinge
+        sided("horn_r", "head", (2.25, -3.25, -1), (0.35, 0.2, 0), [box(-0.6, -0.6, 0, 1.25, 1.25, 7, "bone")])
+        sided("horn_tip_r", "horn_r", (0, 0, 6.5), (0.15, 0, 0), [box(-0.4, -0.4, 0, 0.75, 0.75, 5, "horntip")])
+        sided("frill_r", "head", (3.6, -0.5, -2.5), (0.05, 0.55, 0.1), frill())
+    else:
+        sided("horn_r", "head", (2.25, -3.25, -1), (0.55, 0.22, 0), [box(-0.75, -0.75, 0, 1.5, 1.5, 9, "bone")])
+        sided("horn_tip_r", "horn_r", (0, 0, 8.5), (0.4, 0, 0), [box(-0.5, -0.5, 0, 1, 1, 7, "horntip")])
+        sided("horn2_r", "head", (3.25, -1.5, -0.5), (0.2, 0.55, 0), [box(-0.5, -0.5, 0, 1, 1, 5, "bone")])
+
+    # ---------------- tail ----------------
+    part("tail1", "body", (0, -2.5, 15), (-0.22, 0, 0), [
+        box(-3.75, -3.75, -1, 7.5, 7.5, 13), box(-1.5, -4.25, 0, 3, 0.5, 11, "ridge")]
+        + (fin(-4.25, -1, 12, ((-1, 1.75), (12, 2.25)), rays=(3, 7.5)) if sea else spikes(-4.25, (1.5, 5.5, 9.5), 1.8, 1.0)))
+    part("tail2", "tail1", (0, 0, 11.5), (-0.08, 0, 0), [
+        box(-3, -3, -1, 6, 6, 13), box(-1.25, -3.5, 0, 2.5, 0.5, 11, "ridge")]
+        + (fin(-3.5, -1, 12, ((-1, 2.0), (12, 1.75)), rays=(3, 7.5)) if sea else spikes(-3.5, (1.5, 5.5, 9.5), 1.5, 0.9)))
+    part("tail3", "tail2", (0, 0, 11.5), (0.1, 0, 0), [
+        box(-2.25, -2.25, -1, 4.5, 4.5, 13)]
+        + (fin(-2.25, -1, 12, ((-1, 1.75), (12, 1.5)), rays=(3, 7.5)) if sea else spikes(-2.25, (2, 7), 1.2, 0.75)))
+    part("tail4", "tail3", (0, 0, 11.5), (0.12, 0, 0), [
+        box(-1.5, -1.5, -1, 3, 3, 13)]
+        + (fin(-1.5, -1, 12, ((-1, 1.5), (12, 1.5)), rays=(3, 7.5)) if sea else spikes(-1.5, (3, 8), 0.9, 0.6)))
+    part("tail_tip", "tail4", (0, 0, 11.5), boxes=[box(-1, -1, -1, 2, 2, 4)] + (fluke() if sea else [
+        box(-3.5, -0.25, 1, 7, 0.5, 3, "spike"), box(-2.5, -0.25, 4, 5, 0.5, 2.5, "spike"),
+        box(-1.5, -0.25, 6.5, 3, 0.5, 2, "spike"), box(-0.5, -0.25, 8.5, 1, 0.5, 1.5, "spike")]))
+
+    # ---------------- legs (right side, mirrored to the left) ----------------
+    sided("front_leg_r", "body", (5, 2.5, -11), (0.25, 0, 0), [
+        box(-2.25, -4, -2.75, 4.5, 7.5, 5.5),                            # shoulder
+        box(-2, 2.5, -2.1, 4, 4.5, 4.25)])                               # upper arm
+    sided("front_shin_r", "front_leg_r", (0, 6, 0), (-0.45, 0, 0), [
+        box(-1.6, -0.5, -1.6, 3.25, 9.75, 3.25),
+        box(-0.4, 0.5, 1.5, 0.75, 1.5, 1.5, "spike")])                   # elbow spur
+    sided("front_foot_r", "front_shin_r", (0, 9.38, 0), (0.2, 0, 0), [box(-1.9, 0, -2.25, 3.75, 1, 3.75)] + toes(-2.25))
+    sided("hind_leg_r", "body", (4.5, 0.5, 9.5), (-0.55, 0, 0), [
+        box(-2.5, -4.5, -3.75, 5, 9, 7.5),                               # thigh
+        box(-2, 4, -2.5, 4, 4.5, 5)])
+    sided("hind_shin_r", "hind_leg_r", (0, 8, 0), (1.25, 0, 0), [
+        box(-1.5, -0.5, -1.5, 3, 8.25, 3),
+        box(-0.4, -1, 1.25, 0.75, 1.5, 1.5, "spike")])                   # heel spur
+    sided("hind_foot_r", "hind_shin_r", (0, 7.5, 0), (-0.85, 0, 0), [box(-1.25, -0.5, -1.25, 2.5, 5.25, 2.5)])
+    sided("hind_paw_r", "hind_foot_r", (0, 4.5, 0), (0.15, 0, 0), [box(-1.9, 0, -2.25, 3.75, 1, 3.75)] + toes(-2.25))
+
+    # ---------------- wings (the Sea Dragon swims with them) ----------------
+    sided("wing_r", "body", (4.5, -5.5, -11), (0, 0, 0), [
+        box(0, -1, -1, WING_IN + 0.5, 2, 2),                             # arm bone
+        box(0.5, -1.5, -0.75, 9, 0.5, 1.5, "ridge"),                     # muscle along the top
+        box(WING_IN - 1, -2.25, -1, 1.25, 1.5, 1.25, "claw"),            # thumb claw
+    ] + membrane(WING_IN, 21.0, 17.0, STRUTS_IN, 3.0))
+    sided("wing_tip_r", "wing_r", (WING_IN, 0, 0), (0, 0, 0), [
+        box(0, -0.75, -0.75, WING_OUT, 1.5, 1.5),                        # finger bone
+        box(WING_OUT - 0.5, -1, -1, 1.25, 1.25, 1.25, "claw"),
+    ] + membrane(WING_OUT, 17.0, 1.5, STRUTS_OUT, 2.5))
+
+    # ---------------- UV packing ----------------
+    all_boxes = [b for p in PARTS for b in p[4]]
+    order = sorted(all_boxes, key=lambda b: -footprint(b)[1])
+    tw = 256
+    x = y = row_h = 0
+    for b in order:
+        fw, fh = footprint(b)
+        if x + fw > tw:
+            x, y, row_h = 0, y + row_h, 0
+        b["uv"] = (x, y)
+        x += fw
+        row_h = max(row_h, fh)
+    th = 1
+    while th < y + row_h:
+        th *= 2
+    print(f"{kind}: texture {tw}x{th}, {len(all_boxes)} boxes in {len(PARTS)} parts")
+
+    # ---------------- rest pose: where every part sits in model space ----------------
+    pose = {"root": (np.eye(3), np.zeros(3))}
+    for name, parent, pivot, rot, _ in PARTS:
+        pr, pt = pose[parent]
+        pose[name] = (pr @ rot_zyx(*rot), pt + pr @ np.array(pivot, dtype=float))
+    model = dict(kind=kind, parts=PARTS, pose=pose, tw=tw, th=th)
+
+    head_pivot = to_model(model, "head", (0, 0, 0))
+    mouth = to_model(model, "head", (0, 1, -16))
+    print(f"  head pivot: {-head_pivot[2]:.1f} px forward, {24 - head_pivot[1]:.1f} px up; "
+          f"mouth: {-mouth[2]:.1f} forward, {24 - mouth[1]:.1f} up")
+    for foot in ("front_foot_r", "hind_paw_r"):
+        print(f"  {foot} sole at y = {to_model(model, foot, (0, 1, 0))[1]:.2f} (ground is 24)")
+    return model
 
 
-def to_model(name, p):
-    r, t = POSE[name]
+def to_model(model, name, p):
+    r, t = model["pose"][name]
     return t + r @ np.array(p, dtype=float)
 
 
-head_pivot = to_model("head", (0, 0, 0))
-mouth = to_model("head", (0, 1, -16))
-print(f"head pivot: {-head_pivot[2]:.1f} px forward, {24 - head_pivot[1]:.1f} px up; "
-      f"mouth: {-mouth[2]:.1f} forward, {24 - mouth[1]:.1f} up")
-for foot in ("front_foot_r", "hind_paw_r"):
-    print(f"{foot} sole at y = {to_model(foot, (0, 1, 0))[1]:.2f} (ground is 24)")
+MODELS = {kind: build_model(kind) for kind in ("winged", "sea")}
+
 
 # ---------------- painting ----------------
 # Painted at RES texels per model pixel, so the scales and gradients are much finer than
@@ -278,6 +359,22 @@ VARIANTS = [
          # thin branching lightning lines over the back and sides, glowing in the dark
          markings=dict(color=(255, 214, 104), glow=(210, 156, 44)),
          item_gradient=[(20, (8, 12, 42)), (70, (28, 54, 140)), (120, (66, 106, 198)), (190, (250, 214, 112))]),
+    dict(name="sea_dragon", model="sea",
+         # deep-sea countershading: dark navy-teal back, turquoise sides, pale seafoam belly
+         stops=[(0.0, (8, 34, 56)), (0.3, (14, 74, 98)), (0.55, (30, 128, 140)), (0.72, (84, 178, 176)),
+                (0.86, (170, 222, 206)), (1.0, (214, 240, 226))],
+         dorsal=(8, 34, 56), flank=(14, 74, 98), flank2=(30, 128, 140), belly=(214, 240, 226),
+         spike_base=(34, 110, 124), spike_tip=(170, 230, 220), ridge=0.88,
+         horn_base=(206, 238, 228), horn_mid=(96, 172, 176), horn_tip=(18, 58, 76),
+         membrane_root=(10, 52, 74), membrane_edge=(64, 168, 172), vein=(130, 214, 206),
+         strut=(28, 96, 112), leg_dark=(6, 30, 44),
+         fin_root=(12, 60, 82), fin_edge=(120, 216, 206), fin_ray=(6, 36, 52),
+         eye=(170, 255, 236), eye_rim=(0, 168, 170), pupil=(2, 24, 30),
+         claw=(30, 44, 52), tooth=(238, 240, 226), mouth=(40, 30, 58), tongue=(108, 70, 110), nostril=(4, 18, 26),
+         scale_edge=-0.05, rime=0.0,
+         # two rows of glowing spots along each side, like a deep-sea fish
+         markings=dict(kind="spots", color=(150, 255, 236), glow=(60, 220, 210)),
+         item_gradient=[(20, (4, 26, 40)), (70, (16, 84, 104)), (120, (40, 150, 156)), (190, (190, 240, 222))]),
 ]
 
 BODY_LIKE = ("body", "neck1", "neck2", "head", "jaw", "tail1", "tail2", "tail3", "tail4", "tail_tip")
@@ -444,15 +541,29 @@ def lightning_lines(model, tb, height):
     return line * (1.0 - smoothstep(0.62, 0.8, tb))
 
 
+def spot_rows(model, tb, height):
+    """0..1 strength of glowing spots in two rows along each side, like a deep-sea fish's lights.
+    The spots sit at fixed places along the body (model z), so they line up across the parts."""
+    zm, ym = model[2], tb * height
+    out = np.zeros(zm.shape)
+    for row_t, step, radius, offset in ((0.58, 3.2, 0.42, 0.0), (0.34, 4.6, 0.32, 1.7)):
+        zc = np.round((zm - offset) / step) * step + offset
+        d = np.hypot(zm - zc, ym - row_t * height)
+        out = np.maximum(out, np.maximum(np.exp(-(d / radius) ** 4), 0.3 * np.exp(-(d / (radius * 2.2)) ** 2)))
+    return out * smoothstep(0.1, 0.25, tb) * (1.0 - smoothstep(0.7, 0.8, tb))
+
+
 def paint_variant(v):
+    m = MODELS[v.get("model", "winged")]
+    TW, TH = m["tw"], m["th"]
     img = np.zeros((TH * RES, TW * RES, 3))
     alpha = np.zeros((TH * RES, TW * RES))
     glow = np.zeros((TH * RES, TW * RES, 4))
     stops = v.get("stops") or [(0.0, v["dorsal"]), (0.38, v["flank"]), (0.72, v["flank2"]), (1.0, v["belly"])]
     rng = np.random.default_rng(11)
-    for (name, parent, pivot, rot, boxes) in PARTS:
+    for (name, parent, pivot, rot, boxes) in m["parts"]:
         ytop, ybot = core_range(boxes)
-        rmat, tvec = POSE[name]
+        rmat, tvec = m["pose"][name]
         inner_wing = name in ("wing_r", "wing_l")
         wing_len = WING_IN if inner_wing else WING_OUT
         struts = STRUTS_IN if inner_wing else STRUTS_OUT
@@ -540,6 +651,20 @@ def paint_variant(v):
                         k = k * 0.9
                 elif mat == "strut":
                     col = mix(v["strut"], v["membrane_root"], 0.4 * np.clip((pz - 0.75) / 21.0, 0, 1))
+                elif mat in ("fin", "finray"):
+                    # dark at the base, fading to a pale edge, with faint stiff rays running out to the edge
+                    axis, base, span = b["fin"]
+                    t = np.clip(np.abs((px, py, pz)[axis] - base) / span, 0, 1)
+                    col = mix(v["fin_root"], v["fin_edge"], smoothstep(0, 1, t))
+                    if mat == "finray":
+                        col = mix(v["fin_ray"], v["fin_edge"], 0.35 * t)
+                    else:
+                        across = pz if axis != 2 else py
+                        ray = np.exp(-((((across * RES) % 6.0) - 3.0) / 0.7) ** 2)
+                        col = col + (np.array(v["fin_ray"], float) - col) * (0.3 * ray * (1 - 0.5 * t))[..., None]
+                        col = col + (np.array(v["fin_edge"], float) * 1.08 - col) * (0.35 * smoothstep(0.82, 1.0, t))[..., None]
+                    if face not in ("left", "right"):
+                        k = k * 0.9
                 elif mat == "eye":
                     if face in ("left", "right"):
                         r = np.sqrt((ti - 0.5) ** 2 + ((tj - 0.5) * 0.8) ** 2)
@@ -566,7 +691,8 @@ def paint_variant(v):
                     raise ValueError(mat)
                 mk = None
                 if v.get("markings") and tb is not None:
-                    mk = lightning_lines(model, tb, ybot - ytop)
+                    pattern = spot_rows if v["markings"].get("kind") == "spots" else lightning_lines
+                    mk = pattern(model, tb, ybot - ytop)
                     col = col + (np.array(v["markings"]["color"], float) - col) * (0.85 * mk)[..., None]
                 col = col * np.asarray(k)[..., None] + rng.normal(0, 1.2, col.shape)
                 img[V0:V0 + FH, U0:U0 + FW] = col
@@ -619,14 +745,24 @@ def var(name):
     return "p_" + name
 
 
-lines = []
-for name, parent, pivot, rot, boxes in PARTS:
-    cubes = "CubeListBuilder.create()"
-    for b in boxes:
-        (x, y, z), (w, h, d) = b["o"], b["s"]
-        cubes += f"\n                .texOffs({b['uv'][0]}, {b['uv'][1]}).addBox({fl(x)}, {fl(y)}, {fl(z)}, {fl(w)}, {fl(h)}, {fl(d)})"
-    pose = f"PartPose.offsetAndRotation({', '.join(fl(v) for v in pivot)}, {', '.join(fl(v) for v in rot)})"
-    lines.append(f'        PartDefinition {var(name)} = {var(parent)}.addOrReplaceChild("{name}", {cubes},\n                {pose});')
+def layer_method(model, method, doc):
+    lines = []
+    for name, parent, pivot, rot, boxes in model["parts"]:
+        cubes = "CubeListBuilder.create()"
+        for b in boxes:
+            (x, y, z), (w, h, d) = b["o"], b["s"]
+            cubes += f"\n                .texOffs({b['uv'][0]}, {b['uv'][1]}).addBox({fl(x)}, {fl(y)}, {fl(z)}, {fl(w)}, {fl(h)}, {fl(d)})"
+        pose = f"PartPose.offsetAndRotation({', '.join(fl(v) for v in pivot)}, {', '.join(fl(v) for v in rot)})"
+        lines.append(f'        PartDefinition {var(name)} = {var(parent)}.addOrReplaceChild("{name}", {cubes},\n                {pose});')
+    return f"""{doc}    @SuppressWarnings("unused")
+    public static LayerDefinition {method}() {{
+        MeshDefinition mesh = new MeshDefinition();
+        PartDefinition {var('root')} = mesh.getRoot();
+{chr(10).join(lines)}
+        return LayerDefinition.create(mesh, {model["tw"]}, {model["th"]});
+    }}
+"""
+
 
 java = f"""// GENERATED by tools/make_dragon.py - edit that script instead of this file.
 package com.wildcreatures.client;
@@ -638,14 +774,8 @@ import net.minecraft.client.model.geom.builders.*;
 public final class DragonLayer {{
     private DragonLayer() {{}}
 
-    @SuppressWarnings("unused")
-    public static LayerDefinition create() {{
-        MeshDefinition mesh = new MeshDefinition();
-        PartDefinition {var('root')} = mesh.getRoot();
-{chr(10).join(lines)}
-        return LayerDefinition.create(mesh, {TW}, {TH});
-    }}
-}}
+{layer_method(MODELS["winged"], "create", "")}
+{layer_method(MODELS["sea"], "createSea", "    /** The Sea Dragon: the same skeleton (so the same animations), with fins instead of spikes. */" + chr(10))}}}
 """
 open(JAVA, "w").write(java)
 print("wrote", JAVA, "and", ", ".join(v["name"] for v in VARIANTS), "textures")

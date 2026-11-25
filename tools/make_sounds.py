@@ -1,5 +1,6 @@
 """Synthesises the dragons' sounds (roars, growl, hurt, death, bite, fire breath,
-wing flap, footstep, and the Frost Dragon's icy breath) and writes them as mono .ogg files.
+wing flap, footstep, the Frost Dragon's icy breath, the Lightning Dragon's call and the Sea Dragon's water blast)
+and writes them as mono .ogg files.
 
 Run from the project root:  python3 tools/make_sounds.py   (needs numpy and ffmpeg)
 Every sound is built from scratch: a buzzing vocal source shaped by throat-like
@@ -239,9 +240,39 @@ def lightning_spark():
     return (zap + crackle) * envelope(n, 0.01, 0.2)
 
 
+def bubbles(n, count, lo=300, hi=1400):
+    """Bubbles popping up through water: short pings that rise in pitch as they fade."""
+    x = np.zeros(n)
+    for _ in range(count):
+        i0 = int(rng.uniform(0, n / SR - 0.06) * SR)
+        seg = np.arange(min(int(0.05 * SR), n - i0)) / SR
+        f = rng.uniform(lo, hi) * (1 + 4.0 * seg)
+        ph = 2 * np.pi * np.cumsum(f) / SR
+        x[i0:i0 + len(seg)] += np.sin(ph) * np.exp(-seg / rng.uniform(0.008, 0.025)) * rng.uniform(0.3, 1.0)
+    return x
+
+
+def sea_blast():
+    """The Sea Dragon's water blast: a splash as it bursts out, then a rushing jet of churning water
+    and bubbles under a deep gurgling roar."""
+    dur = 2.6
+    t = t_axis(dur)
+    n = len(t)
+    rush = lowpass(rng.standard_normal(n), 2200, order=1) * (0.75 + 0.25 * smooth_noise(n, 14))
+    churn = bandpass(rng.standard_normal(n), 120, 700) * (0.6 + 0.4 * smooth_noise(n, 9)) * 1.5
+    spray = bandpass(rng.standard_normal(n), 3500, 10000) * 0.22 * (0.7 + 0.3 * smooth_noise(n, 25))
+    bub = bubbles(n, 240) * 0.5
+    splash = bandpass(rng.standard_normal(n), 400, 6000) * np.exp(-t / 0.09) * 2.2
+    voice = roar(dur, 58, rise=0.15, fall=0.2, growl_hz=21, breath=0.8, attack=0.15, release=0.6,
+                 throat=((220, 110, 1.0), (520, 200, 1.0), (1100, 300, 0.5))) * 0.4
+    x = rush + churn + spray + bub + splash + voice
+    whoosh = 1 + 0.6 * np.exp(-t / 0.25)                           # strongest as the water bursts out
+    return x * whoosh * envelope(n, 0.03, 0.6)
+
+
 # python3 tools/make_sounds.py              -> every sound
-# python3 tools/make_sounds.py frost        -> only the Frost Dragon's (same for red, lightning)
-which = sys.argv[1:] or ["red", "frost", "lightning"]
+# python3 tools/make_sounds.py frost        -> only the Frost Dragon's (same for red, lightning, sea)
+which = sys.argv[1:] or ["red", "frost", "lightning", "sea"]
 if "red" in which:
     os.makedirs(OUT, exist_ok=True)
     save("roar1", roar(2.6, 78))
@@ -266,3 +297,8 @@ if "lightning" in which:
     rng = np.random.default_rng(31)
     save("call", lightning_call(), out=LIGHTNING_OUT)
     save("spark", lightning_spark(), out=LIGHTNING_OUT, peak=0.8)
+if "sea" in which:
+    SEA_OUT = "src/main/resources/assets/wildcreatures/sounds/sea_dragon"
+    os.makedirs(SEA_OUT, exist_ok=True)
+    rng = np.random.default_rng(41)
+    save("blast", sea_blast(), out=SEA_OUT)

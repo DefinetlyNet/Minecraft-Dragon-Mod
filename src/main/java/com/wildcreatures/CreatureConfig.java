@@ -9,7 +9,7 @@ public final class CreatureConfig {
     public static final ForgeConfigSpec SPEC;
 
     /** One section per dragon type. */
-    public static final DragonStats RED, FROST, LIGHTNING;
+    public static final DragonStats RED, FROST, LIGHTNING, SEA;
 
     public static final ForgeConfigSpec.IntValue ASHEN_WASTES_WEIGHT;
     public static final ForgeConfigSpec.DoubleValue ESSENCE_CHANCE, ESSENCE_CHANCE_SMALL, ESSENCE_CHANCE_GIANT;
@@ -43,6 +43,20 @@ public final class CreatureConfig {
                 .effectSeconds("burnSeconds", "Seconds a creature hit by a strike burns for", 4)
                 .affectsBlocks("strikesStartFires", "Whether strikes set the ground on fire like normal lightning, on Normal and Hard difficulty (also needs the mobGriefing and doFireTick game rules on). A strike that hits a lightning rod never starts a fire")
                 .flying(true, 0.55)
+                .build(b);
+        SEA = new DragonStats.Defaults("sea_dragon", "Sea Dragon", "deep oceans")
+                .health(170.0, 100.0, 340.0)
+                .armor(8.0)
+                .bite(14.0, 30)
+                .breath("water blast", 5.0, 50, 140, 20.0)
+                .damageNote(" (a target in the blast is hit about twice a second, and each hit shoves it back)")
+                .effectRadius("blastRadius", "Radius around the aim point where the blast still hits creatures and puts out fires", 2.5)
+                .effectSeconds("undertowSeconds", "Seconds a creature hit by the blast is dragged down while it's in water (the Undertow effect)", 3)
+                .affectsBlocks("blastPutsOutFires", "Whether the blast puts out fires and campfires and cools lava into obsidian or cobblestone (also needs the mobGriefing game rule on)")
+                .swimming(0.42)
+                .spawnRarity(4)
+                .spawnComment("Every 30 seconds, each player has a 1 in this many chance of a Sea Dragon turning up on the floor of a deep ocean"
+                        + " 32 to 64 blocks away (at least 8 blocks down, and only if no other Sea Dragon is around). Higher = rarer. 0 = never spawn naturally.")
                 .build(b);
         b.comment("Dragon Essence drops (percent chance when a player kills any kind of dragon; each level of Looting adds half of the normal chance)").push("dragon_essence");
         ESSENCE_CHANCE = b.comment("Normal-size dragon").defineInRange("dropChancePercent", 2.0, 0.0, 100.0);

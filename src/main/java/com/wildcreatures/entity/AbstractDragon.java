@@ -81,12 +81,13 @@ public abstract class AbstractDragon extends Monster {
 
     // client-side animation state
     private int biteAnim;
-    private float flyAnim, flyAnimO, breathAnim, breathAnimO;
+    private float flyAnim, flyAnimO, breathAnim, breathAnimO, swimAnim, swimAnimO, swimPitch, swimPitchO;
 
     protected AbstractDragon(EntityType<? extends AbstractDragon> type, Level level) {
         super(type, level);
         this.xpReward = 60;
-        this.groundMoveControl = this.moveControl;
+        this.groundMoveControl = createGroundMoveControl();
+        this.moveControl = groundMoveControl;
         this.flyMoveControl = new FlyControl(this);
         this.setMaxUpStep(1.5F);
         if (CreatureConfig.SPEC.isLoaded()) {
@@ -136,6 +137,34 @@ public abstract class AbstractDragon extends Monster {
     /** How much harder (or softer) this dragon hits for its size: 1 for a normal dragon. */
     protected float sizeDamage() { return size.damage; }
 
+    // ------------------------------------------------------------------ hooks for dragons that don't walk and fly (the Sea Dragon)
+
+    /** How it moves when it isn't flying. Called once, from the constructor. */
+    protected MoveControl createGroundMoveControl() { return this.moveControl; }
+
+    /** Whether it paddles to the surface in water, like most land animals. */
+    protected boolean floatsInWater() { return true; }
+
+    /** The goals for moving around with nothing to hunt. */
+    protected void registerWanderGoals() {
+        goalSelector.addGoal(5, new SkyWanderGoal());
+        goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.8) {
+            @Override public boolean canUse() { return !isFlying() && super.canUse(); }
+            @Override public boolean canContinueToUse() { return !isFlying() && super.canContinueToUse(); }
+        });
+    }
+
+    /** Steers toward the target by itself (for swimming); return false to walk there with the path finder. */
+    protected boolean swimToward(LivingEntity target) { return false; }
+
+    /** Stays put while it uses its breath. */
+    protected void holdPosition() {
+        if (isFlying()) flyMoveControl.hover();
+    }
+
+    /** Whether the model should use the swimming pose. */
+    protected boolean swimPose() { return false; }
+
     // ------------------------------------------------------------------ setup
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -176,14 +205,10 @@ public abstract class AbstractDragon extends Monster {
 
     @Override
     protected void registerGoals() {
-        goalSelector.addGoal(0, new FloatGoal(this));
+        if (floatsInWater()) goalSelector.addGoal(0, new FloatGoal(this));
         goalSelector.addGoal(1, new BreathGoal());
         goalSelector.addGoal(2, new AttackGoal());
-        goalSelector.addGoal(5, new SkyWanderGoal());
-        goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.8) {
-            @Override public boolean canUse() { return !isFlying() && super.canUse(); }
-            @Override public boolean canContinueToUse() { return !isFlying() && super.canContinueToUse(); }
-        });
+        registerWanderGoals();
         goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 16.0F));
         goalSelector.addGoal(7, new RandomLookAroundGoal(this));
 
@@ -318,7 +343,7 @@ public abstract class AbstractDragon extends Monster {
     }
 
     private void updateFlight() {
-        if (!stats().canFly.get()) {
+        if (!stats().canFly()) {
             if (isFlying()) setFlying(false);
             return;
         }
@@ -367,8 +392,19 @@ public abstract class AbstractDragon extends Monster {
     private void clientTick() {
         flyAnimO = flyAnim;
         breathAnimO = breathAnim;
+        swimAnimO = swimAnim;
         flyAnim = Mth.approach(flyAnim, isFlying() ? 1 : 0, 0.08F);
+        swimAnim = Mth.approach(swimAnim, swimPose() ? 1 : 0, 0.08F);
         breathAnim = Mth.approach(breathAnim, isBreathing() ? 1 : 0, 0.2F);
+        // while swimming the body tips nose-up when rising and nose-down when diving, smoothed so it doesn't twitch
+        swimPitchO = swimPitch;
+        float wantPitch = 0.0F;
+        if (swimPose()) {
+            double dx = getX() - xo, dy = getY() - yo, dz = getZ() - zo;
+            double h = Math.sqrt(dx * dx + dz * dz), speed = Math.sqrt(h * h + dy * dy);
+            if (speed > 0.01) wantPitch = (float) (Mth.atan2(dy, h) * Mth.RAD_TO_DEG * Math.min(1.0, speed / 0.15));
+        }
+        swimPitch += (Mth.clamp(wantPitch, -40.0F, 40.0F) - swimPitch) * 0.15F;
         if (biteAnim > 0) biteAnim--;
 
         if (isFlying() && tickCount % 21 == 0) {
@@ -481,7 +517,10 @@ public abstract class AbstractDragon extends Monster {
 
         @Override public void start() { repath = 0; }
 
-        @Override public void stop() { getNavigation().stop(); }
+        @Override public void stop() {
+            getNavigation().stop();
+            if (!isFlying()) holdPosition();
+        }
 
         @Override public void tick() {
             LivingEntity t = getTarget();
@@ -494,6 +533,8 @@ public abstract class AbstractDragon extends Monster {
                     away = away.lengthSqr() < 1.0E-3 ? Vec3.ZERO : away.normalize().scale(4.2);
                     flyMoveControl.setWantedPosition(t.getX() + away.x, t.getY() + 0.8, t.getZ() + away.z, 1.0);
                 }
+            } else if (swimToward(t)) {
+                repath = 0;
             } else if (--repath <= 0) {
                 repath = 8 + random.nextInt(5);
                 if (inReach) getNavigation().stop();
@@ -532,7 +573,7 @@ public abstract class AbstractDragon extends Monster {
             LivingEntity t = getTarget();
             aim = t != null ? t.position().add(0, t.getBbHeight() * 0.4, 0) : position().add(getLookAngle().scale(8));
             getNavigation().stop();
-            if (isFlying()) flyMoveControl.hover();
+            holdPosition();
             entityData.set(BREATHING, true);
             playSound(breathSound(), 3.0F, 0.95F + random.nextFloat() * 0.1F);
         }
@@ -557,7 +598,7 @@ public abstract class AbstractDragon extends Monster {
             yBodyRot = getYRot();
             yHeadRot = getYRot();
             setXRot(breathPitch(mouthPos(), aim));
-            if (isFlying()) flyMoveControl.hover();
+            holdPosition();
             if (breathTicks < stats().breathTicks.get() - 4) breathTick(aim);   // short wind-up first
         }
     }
@@ -667,7 +708,7 @@ public abstract class AbstractDragon extends Monster {
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
-        if (tag.getBoolean("Flying")) setFlying(true);
+        if (tag.getBoolean("Flying") && stats().canFly()) setFlying(true);
         if (tag.contains("DragonSize")) {
             try {
                 Size saved = Size.valueOf(tag.getString("DragonSize").toUpperCase(java.util.Locale.ROOT));
@@ -683,6 +724,12 @@ public abstract class AbstractDragon extends Monster {
     public float getFlyAnim(float partialTick) { return Mth.lerp(partialTick, flyAnimO, flyAnim); }
 
     public float getBreathAnim(float partialTick) { return Mth.lerp(partialTick, breathAnimO, breathAnim); }
+
+    /** 0 on land, 1 swimming (only sea dragons swim). */
+    public float getSwimAnim(float partialTick) { return Mth.lerp(partialTick, swimAnimO, swimAnim); }
+
+    /** Client side: how far the body is tipped while swimming, in degrees (positive = nose up). */
+    public float getSwimPitch(float partialTick) { return Mth.lerp(partialTick, swimPitchO, swimPitch); }
 
     /** 0 when not biting, rises to 1 halfway through the bite and back to 0. */
     public float getBiteAnim(float partialTick) {
